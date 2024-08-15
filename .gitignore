@@ -1,10 +1,43 @@
 ## shared ##
 
 ## runelite ##
+# have git recursively ignore/unignore subdirs so that we only track the nested dirs containing relevant plugin code 
+# src 
 runelite/*
-!runelite/runelite-client/src/main/java/net/runelite/client/plugins/gamedataserver
-!runelite/runelite-client/src/test/java/net/runelite/client/plugins/gamedataserver
+!runelite/runelite-client/
+runelite/runelite-client/*
+!runelite/runelite-client/src/
+runelite/runelite-client/src/*
+!runelite/runelite-client/src/main/
+runelite/runelite-client/src/main/*
+!runelite/runelite-client/src/main/java/
+runelite/runelite-client/src/main/java/*
+!runelite/runelite-client/src/main/java/net/
+runelite/runelite-client/src/main/java/net/*
+!runelite/runelite-client/src/main/java/net/runelite/
+runelite/runelite-client/src/main/java/net/runelite/*
+!runelite/runelite-client/src/main/java/net/runelite/client/
+runelite/runelite-client/src/main/java/net/runelite/client/*
+!runelite/runelite-client/src/main/java/net/runelite/client/plugins/
+runelite/runelite-client/src/main/java/net/runelite/client/plugins/*
+!runelite/runelite-client/src/main/java/net/runelite/client/plugins/gamedataserver/
 
+# test
+!runelite/runelite-client/src/test/
+runelite/runelite-client/src/test/*
+!runelite/runelite-client/src/test/java/
+runelite/runelite-client/src/test/java/*
+!runelite/runelite-client/src/test/java/net/
+runelite/runelite-client/src/test/java/net/*
+!runelite/runelite-client/src/test/java/net/runelite/
+runelite/runelite-client/src/test/java/net/runelite/*
+!runelite/runelite-client/src/test/java/net/runelite/client/
+runelite/runelite-client/src/test/java/net/runelite/client/*
+!runelite/runelite-client/src/test/java/net/runelite/client/plugins/
+runelite/runelite-client/src/test/java/net/runelite/client/plugins/*
+!runelite/runelite-client/src/test/java/net/runelite/client/plugins/gamedataserver/
+
+# misc
 target
 nbactions.xml
 nb-configuration.xml
