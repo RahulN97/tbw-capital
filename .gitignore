@@ -1,0 +1,21 @@
+## shared ##
+
+## runelite ##
+runelite/*
+!runelite/runelite-client/src/main/java/net/runelite/client/plugins/gamedataserver
+!runelite/runelite-client/src/test/java/net/runelite/client/plugins/gamedataserver
+
+target
+nbactions.xml
+nb-configuration.xml
+/nbproject/
+project.properties
+*.iml
+.idea/
+.project
+.settings/
+.classpath
+.vscode
+.factorypath
+.DS_Store
+
