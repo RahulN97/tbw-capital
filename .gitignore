@@ -1,13 +1,14 @@
 ## shared ##
 
 ## runelite ##
-# have git recursively ignore/unignore subdirs so that we only track the nested dirs containing relevant plugin code 
-# src 
+# have git recursively ignore/unignore subdirs so that we only track the nested dirs containing relevant plugin code
 runelite/*
 !runelite/runelite-client/
 runelite/runelite-client/*
 !runelite/runelite-client/src/
 runelite/runelite-client/src/*
+
+# main
 !runelite/runelite-client/src/main/
 runelite/runelite-client/src/main/*
 !runelite/runelite-client/src/main/java/
@@ -36,6 +37,9 @@ runelite/runelite-client/src/test/java/net/runelite/client/*
 !runelite/runelite-client/src/test/java/net/runelite/client/plugins/
 runelite/runelite-client/src/test/java/net/runelite/client/plugins/*
 !runelite/runelite-client/src/test/java/net/runelite/client/plugins/gamedataserver/
+
+# sync script
+!runelite/sync_runelite.sh
 
 # misc
 target
