@@ -1,0 +1,26 @@
+{
+    "locations": [
+        {
+            "name": "compass",
+            "coordinates": {
+                "x": 100,
+                "y": 120
+            },
+            "jitter": {
+                "x": 5,
+                "y": 5
+            }
+        },
+        {
+            "name": "grand_exchange",
+            "coordinates": {
+                "x": 250,
+                "y": 251
+            },
+            "jitter": {
+                "x": 12,
+                "y": 12
+            }
+        }
+    ]
+}

@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.gamedataserver.model;
+package net.runelite.client.plugins.gamedataserver.model.exchange;
 
 import net.runelite.api.GrandExchangeOfferState;
 

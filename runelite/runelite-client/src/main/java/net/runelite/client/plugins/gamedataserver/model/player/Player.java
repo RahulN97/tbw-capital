@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.gamedataserver.model;
+package net.runelite.client.plugins.gamedataserver.model.player;
 
 import lombok.Builder;
 import lombok.Data;

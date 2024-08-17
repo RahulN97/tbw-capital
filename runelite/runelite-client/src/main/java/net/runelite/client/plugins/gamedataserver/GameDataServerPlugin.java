@@ -1,6 +1,7 @@
 package net.runelite.client.plugins.gamedataserver;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.sun.net.httpserver.HttpExchange;
@@ -12,13 +13,25 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.gamedataserver.model.*;
-import net.runelite.client.plugins.gamedataserver.model.Item;
-import net.runelite.client.plugins.gamedataserver.model.Player;
+import net.runelite.client.plugins.gamedataserver.model.config.LiveConfig;
+import net.runelite.client.plugins.gamedataserver.model.config.MMConfig;
+import net.runelite.client.plugins.gamedataserver.model.config.StratConfig;
+import net.runelite.client.plugins.gamedataserver.model.config.TopLevelConfig;
+import net.runelite.client.plugins.gamedataserver.model.exchange.Exchange;
+import net.runelite.client.plugins.gamedataserver.model.exchange.ExchangeOrder;
+import net.runelite.client.plugins.gamedataserver.model.exchange.ExchangeOrderState;
+import net.runelite.client.plugins.gamedataserver.model.inventory.Inventory;
+import net.runelite.client.plugins.gamedataserver.model.inventory.Item;
+import net.runelite.client.plugins.gamedataserver.model.player.Location;
+import net.runelite.client.plugins.gamedataserver.model.player.Player;
+import net.runelite.client.plugins.gamedataserver.model.player.Camera;
+import net.runelite.client.util.RuntimeTypeAdapterFactory;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -32,7 +45,6 @@ import java.util.stream.IntStream;
 )
 @Slf4j
 public class GameDataServerPlugin extends Plugin {
-	private static final Gson GSON = new Gson();
 	private static final int SERVER_PORT = 19100;
 	private static final int MAX_GE_SLOTS = 8;
 	private static final int MAX_INVENTORY_SLOTS = 28;
@@ -43,6 +55,7 @@ public class GameDataServerPlugin extends Plugin {
 	@Inject
 	private GameDataServerConfig config;
 	private HttpServer server;
+	private Gson gson;
 
 	@Provides
 	private GameDataServerConfig provideConfig(ConfigManager configManager)
@@ -52,6 +65,13 @@ public class GameDataServerPlugin extends Plugin {
 
 	@Override
 	protected void startUp() throws Exception {
+		RuntimeTypeAdapterFactory<StratConfig> configAdapterFactory = RuntimeTypeAdapterFactory
+			.of(StratConfig.class, "type") // Use "type" as the type field name
+			.registerSubtype(MMConfig.class, "mmConfig");
+		gson = new GsonBuilder()
+			.registerTypeAdapterFactory(configAdapterFactory)
+			.create();
+
 		server = HttpServer.create(new InetSocketAddress(SERVER_PORT), 0);
 		server.createContext("/health", this::health);
 		server.createContext("/snapshot", this::serveGameDataSnapshot);
@@ -72,7 +92,7 @@ public class GameDataServerPlugin extends Plugin {
 	private void sendResponse(HttpExchange httpExchange, Object data) throws IOException {
 		httpExchange.sendResponseHeaders(200, 0);
 		try (OutputStreamWriter out = new OutputStreamWriter(httpExchange.getResponseBody())) {
-			GSON.toJson(data, out);
+			gson.toJson(data, out);
 		}
 	}
 
@@ -118,8 +138,23 @@ public class GameDataServerPlugin extends Plugin {
 
 	private void serveLiveConfig(HttpExchange httpExchange) throws IOException {
 		log.info("Fetching live config");
+		
+		TopLevelConfig topLevelConfig = TopLevelConfig.builder()
+			.maxOfferTime(config.maxOfferTime())
+			.build();
+		
+		List<StratConfig> stratConfigs = new ArrayList<>();
+		stratConfigs.add(
+			MMConfig.builder()
+				.activated(config.mmActivated())
+				.waitDuration(config.mmWaitDuration())
+				.build()
+		);
+
 		LiveConfig liveConfig = LiveConfig.builder()
-			.maxOfferTimeMinutes(config.maxOfferTimeMinutes())
+			.autotraderOn(config.autotraderOn())
+			.topLevelConfig(topLevelConfig)
+			.stratConfigs(stratConfigs)
 			.build();
 		sendResponse(httpExchange, liveConfig);
 	}

@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "autotrader"
+version = "0.1.0"
+description = ""
+authors = ["Rahul Nambiar <rahbiar@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "^2.32.3"
+pyautogui = "^0.9.54"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+isort = "^5.13.2"
+flake8 = "^7.1.1"
+black = "^24.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+target-version = ['py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs         # exclude eggs
+  | \.git          # exclude git directory
+  | \.hg           # exclude hg directory
+  | \.mypy_cache   # exclude mypy cache
+  | \.tox          # exclude tox environment
+  | \.venv         # exclude virtual environments
+  | build          # exclude build directory
+  | dist           # exclude dist directory
+)/
+'''
+
+[tool.isort]
+lines_after_imports = 2
+line_length = 120
+force_grid_wrap = 6
+include_trailing_comma = true
+profile = "black"
