@@ -1,62 +1,169 @@
-from typing import List
+import signal
+import time
+import types
+from typing import Dict, List, Optional
 
-from clients.gds_client import GdsClient
-from clients.price_client import PriceClient
+from clients.gds.gds_client import GdsClient
+from clients.gds.models.config.live_config import LiveConfig
+from clients.gds.models.player.camera import Camera
+from clients.gds.models.player.player_location import PlayerLocation
+from clients.gds.models.player.player_state import PlayerState
+from clients.price.price_client import PriceClient
+from exceptions import UnexpectedPlayerStateError, UnsupportedOrderAction
 from interface.controller import Controller
-from models.order import OrderAction
-from strategy.mm import MMStrategy
+from models.order import BuyOrder, CancelOrder, InputOrder, OrderAction, SellOrder
 from strategy.strategy import BaseStrategy
+from strategy.strategy_factory import provide_strategy
 from utils.logging import logger
 
 
 class Trader:
 
-    def __init__(self, controller: Controller, price_client: PriceClient, gds_client: GdsClient) -> None:
+    EXPECTED_PLAYER_STATE: PlayerState = PlayerState(
+        camera=Camera(z=-878, yaw=0, scale=3600),
+        location=PlayerLocation(x=3165, y=3487),
+    )
+
+    def __init__(
+        self,
+        autotrader_wait: float,
+        controller: Controller,
+        price_client: PriceClient,
+        gds_client: GdsClient,
+    ) -> None:
+        self.autotrader_wait: float = autotrader_wait
         self.controller: Controller = controller
         self.price_client: PriceClient = price_client
         self.gds_client: GdsClient = gds_client
 
-    def is_autotrade_on(self) -> bool:
-        """
-        TODO:
-        check if autotrade is toggled in live config
-        """
-        return True
+        self.autotrader_active: bool = True
+        self.strat_run_times: Dict[str, float] = {}
+
+        signal.signal(signal.SIGINT, self.stop)
+        signal.signal(signal.SIGTERM, self.stop)
+
+    def is_trading_enabled(self) -> bool:
+        live_config: LiveConfig = self.gds_client.get_live_config()
+        enabled: bool = live_config.trading_enabled
+        logger.info(f"OSRS Trading is {'enabled' if enabled else 'disabled'}.")
+        return enabled
 
     def is_player_ready(self) -> bool:
-        """
-        TODO:
-        check if gds player data is in expected state
-        """
-        return True
+        player_state: PlayerState = self.gds_client.get_player_data()
+        return (
+            player_state.location == self.EXPECTED_PLAYER_STATE.location
+            and player_state.camera.z == self.EXPECTED_PLAYER_STATE.camera.z
+            and player_state.camera.yaw == self.EXPECTED_PLAYER_STATE.camera.yaw
+            and player_state.camera.scale > self.EXPECTED_PLAYER_STATE.camera.scale
+        )
 
     def prepare_player(self) -> None:
-        """
-        TODO:
-        click compass, walk to ge tile, zoom to scale, press down
-        if not is_ready, throw Exception
-        """
-        pass
+        self.controller.click_location("compass")
+        # TODO: walk to ge tile if needed
+        self.controller.scroll_full_zoom()
+        self.controller.hold("down", 3)
+        if not self.is_player_ready():
+            player_state: PlayerState = self.gds_client.get_player_data()
+            raise UnexpectedPlayerStateError(
+                player_state=player_state,
+                expected_player_state=self.EXPECTED_PLAYER_STATE,
+            )
 
-    def prepare_strats(self) -> List[BaseStrategy]:
-        return [MMStrategy()]
+    def prepare_strats(self, cur_time: float) -> List[BaseStrategy]:
+        live_config: LiveConfig = self.gds_client.get_live_config()
 
-    def trade(self, actions: List[str]) -> None:
-        self.controller.open_exchange()
-        # TODO: implement trading steps
-        self.controller.exit_exchange()
+        strats: List[BaseStrategy] = []
+        for strat_config in live_config.strat_configs:
+            if not strat_config.activated:
+                continue
+
+            strat: BaseStrategy = provide_strategy(
+                top_level_config=live_config.top_level_config,
+                strat_config=strat_config,
+            )
+
+            next_run_time: float = self.strat_run_times.get(strat.name, 0.0)
+            if cur_time < next_run_time:
+                continue
+
+            self.strat_run_times[strat.name] = cur_time + strat_config.wait_duration
+            strats.append(strat)
+
+        return strats
+
+    def input_order(self, order: InputOrder) -> None:
+        self.controller.click_location("ge_enter_quantity")
+        self.controller.type(str(order.quantity))
+        self.controller.press("enter")
+
+        self.controller.click_location("ge_enter_price")
+        self.controller.type(str(order.price))
+        self.controller.press("enter")
+
+        self.controller.click_location("ge_confirm")
+
+    def process_actions(self, actions: List[OrderAction]) -> None:
+        self.controller.open_ge()
+        for action in actions:
+            if isinstance(action, CancelOrder):
+                logger.info(f"Cancelling order in GE slot: {action.ge_slot} for item {action.name}")
+                self.controller.click_ge_slot(action.ge_slot)
+                self.controller.click_location("ge_abort_offer")
+                self.controller.click_location("ge_back")
+            elif isinstance(action, InputOrder):
+                if isinstance(action, BuyOrder):
+                    self.controller.click_ge_slot(action.ge_slot)
+                    self.controller.type(action.name)
+                    self.controller.press("enter")
+                elif isinstance(action, SellOrder):
+                    self.controller.click_inventory_slot(action.inventory_slot)
+                else:
+                    raise UnsupportedOrderAction(actual=type(action).__name__, expected=InputOrder.__name__)
+                submit_msg: str = f"Submitting {type(action).__name__} in GE slot: {action.ge_slot}"
+                order_msg: str = f"item {action.name}, price: {action.price}, quantity: {action.quantity}"
+                logger.info(f"{submit_msg} - {order_msg}")
+                self.input_order(action)
+            else:
+                raise UnsupportedOrderAction(actual=type(action).__name__, expected=OrderAction.__name__)
+            self.controller.click_location("ge_collect")
+        self.controller.exit_ge()
+
+    def wait(self, trading_enabled: bool, cur_time: float) -> None:
+        if trading_enabled:
+            next_run_time: float = min(self.strat_run_times.values(), default=cur_time + 1)
+            wait_time: float = max(next_run_time - cur_time, 0.0)
+        else:
+            wait_time: float = self.autotrader_wait
+
+        logger.info(f"Waiting for {int(wait_time)} seconds until next trade loop")
+        time.sleep(wait_time)
 
     def start(self) -> None:
         logger.info("Starting auto trader")
 
-        strats: List[BaseStrategy] = self.prepare_strats()
-        while self.is_autotrade_on():
+        while self.autotrader_active:
+            cur_time: float = time.time()
+
+            if not (trading_enabled := self.is_trading_enabled()):
+                self.wait(trading_enabled, cur_time)
+                continue
+
             if not self.is_player_ready():
                 logger.info("Preparing player at exchange")
                 self.prepare_player()
 
             logger.info("Preparing strategies")
-            strats: List[BaseStrategy] = self.prepare_strats()
+            strats: List[BaseStrategy] = self.prepare_strats(cur_time)
             for strat in strats:
                 actions: List[OrderAction] = strat.compute()
-                self.trade(actions)
+                self.process_actions(actions)
+                # TODO: save trades, update state of world
+
+            self.wait(trading_enabled, cur_time)
+
+        logger.info("Exiting autotrader loop")
+
+    def stop(self, signum: int, frame: Optional[types.FrameType]) -> None:
+        logger.info(f"Received signal {signum}. Stopping auto trader")
+        self.autotrader_active = False
+        # TODO: save state of world, shutdown gracefully

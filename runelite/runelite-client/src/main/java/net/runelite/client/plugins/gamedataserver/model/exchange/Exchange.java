@@ -10,5 +10,5 @@ import java.util.List;
 @Data
 public class Exchange {
 	@Singular
-	private List<ExchangeOrder> orders;
+	private List<ExchangeSlot> slots;
 }

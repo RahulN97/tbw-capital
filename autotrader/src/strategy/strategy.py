@@ -1,14 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import List
 
+from clients.gds.models.config.strat_config import StratConfig
+from clients.gds.models.config.top_level_config import TopLevelConfig
 from models.order import OrderAction
 
 
 class BaseStrategy(ABC):
 
-    def __init__(self, wait_duration: int, max_offer_time: int) -> None:
-        self.wait_duration: int = wait_duration
-        self.max_offer_time: int = max_offer_time
+    def __init__(self, top_level_config: TopLevelConfig, strat_config: StratConfig) -> None:
+        self.top_level_config: TopLevelConfig = top_level_config
+        self.strat_config: StratConfig = strat_config
 
     @property
     @abstractmethod

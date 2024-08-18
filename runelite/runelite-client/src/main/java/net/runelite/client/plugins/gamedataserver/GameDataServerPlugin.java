@@ -18,8 +18,8 @@ import net.runelite.client.plugins.gamedataserver.model.config.MMConfig;
 import net.runelite.client.plugins.gamedataserver.model.config.StratConfig;
 import net.runelite.client.plugins.gamedataserver.model.config.TopLevelConfig;
 import net.runelite.client.plugins.gamedataserver.model.exchange.Exchange;
-import net.runelite.client.plugins.gamedataserver.model.exchange.ExchangeOrder;
-import net.runelite.client.plugins.gamedataserver.model.exchange.ExchangeOrderState;
+import net.runelite.client.plugins.gamedataserver.model.exchange.ExchangeSlot;
+import net.runelite.client.plugins.gamedataserver.model.exchange.ExchangeSlotState;
 import net.runelite.client.plugins.gamedataserver.model.inventory.Inventory;
 import net.runelite.client.plugins.gamedataserver.model.inventory.Item;
 import net.runelite.client.plugins.gamedataserver.model.player.Location;
@@ -138,16 +138,16 @@ public class GameDataServerPlugin extends Plugin {
 
 	private void serveLiveConfig(HttpExchange httpExchange) throws IOException {
 		log.info("Fetching live config");
-		
 		TopLevelConfig topLevelConfig = TopLevelConfig.builder()
-			.maxOfferTime(config.maxOfferTime())
+			.minGp(config.minGp())
 			.build();
-		
+
 		List<StratConfig> stratConfigs = new ArrayList<>();
 		stratConfigs.add(
 			MMConfig.builder()
 				.activated(config.mmActivated())
 				.waitDuration(config.mmWaitDuration())
+				.maxOfferTime(config.maxOfferTime())
 				.build()
 		);
 
@@ -165,26 +165,26 @@ public class GameDataServerPlugin extends Plugin {
 			throw new GameDataServerException("Unable to resolve exchange");
 		}
 
-		List<ExchangeOrder> orders = IntStream.range(0, Math.min(offers.length, MAX_GE_SLOTS))
+		List<ExchangeSlot> slots = IntStream.range(0, Math.min(offers.length, MAX_GE_SLOTS))
 			.mapToObj(
 				i -> {
 					GrandExchangeOffer offer = offers[i];
 					if (offer.getState() == GrandExchangeOfferState.EMPTY) {
-						return ExchangeOrder.asEmpty(i);
+						return ExchangeSlot.asEmpty(i);
 					}
-					return ExchangeOrder.builder()
+					return ExchangeSlot.builder()
 						.position(i)
 						.itemId(offer.getItemId())
 						.price(offer.getPrice())
 						.quantityTransacted(offer.getQuantitySold())
 						.totalQuantity(offer.getTotalQuantity())
-						.state(ExchangeOrderState.fromGrandExchangeState(offer.getState()))
+						.state(ExchangeSlotState.fromGrandExchangeOfferState(offer.getState()))
 						.build();
 				})
 			.collect(Collectors.toList());
 
 		return Exchange.builder()
-			.orders(orders)
+			.slots(slots)
 			.build();
 	}
 
@@ -217,8 +217,6 @@ public class GameDataServerPlugin extends Plugin {
 
 	private Player getPlayerData() {
 		Camera camera = Camera.builder()
-			.x(client.getCameraX())
-			.y(client.getCameraY())
 			.z(client.getCameraZ())
 			.yaw(client.getCameraYaw())
 			.scale(client.getScale())

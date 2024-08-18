@@ -30,14 +30,13 @@ public interface GameDataServerConfig extends Config {
 
 	@ConfigItem(
 		position = 1,
-		keyName = "maxOfferTime",
-		name = "Max Offer Time",
-		description = "Maximum amount of time to let an offer sit in the exchange in minutes",
+		keyName = "minGp",
+		name = "Min GP",
+		description = "Minimum GP a trade must make in order for it to be considered",
 		section = topLevelSection
 	)
-    @Units(Units.MINUTES)
-    default int maxOfferTime() {
-		return 60;
+    default int minGp() {
+		return 1000;
 	}
 
 	@ConfigItem(
@@ -63,5 +62,17 @@ public interface GameDataServerConfig extends Config {
 	default int mmWaitDuration()
 	{
 		return 30;
+	}
+
+	@ConfigItem(
+		position = 4,
+		keyName = "maxOfferTime",
+		name = "Max Offer Time",
+		description = "Maximum amount of time to let an offer sit in the exchange in minutes",
+		section = mmSection
+	)
+	@Units(Units.SECONDS)
+	default int maxOfferTime() {
+		return 3600;
 	}
 }

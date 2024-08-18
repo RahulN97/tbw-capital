@@ -5,12 +5,12 @@ from utils.abstract_dataclasses import AbstractDataclass
 
 @dataclass
 class OrderAction(AbstractDataclass):
+    name: str
     ge_slot: int
 
 
 @dataclass
-class InputOrder(AbstractDataclass, OrderAction):
-    name: str
+class InputOrder(OrderAction, AbstractDataclass):
     price: int
     quantity: int
 

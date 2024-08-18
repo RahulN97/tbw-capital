@@ -6,5 +6,5 @@ import lombok.Data;
 @Builder
 @Data
 public class TopLevelConfig {
-	private int maxOfferTime;
+	private int minGp;
 }

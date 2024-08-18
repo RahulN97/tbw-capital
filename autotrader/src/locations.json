@@ -3,8 +3,52 @@
         {
             "name": "compass",
             "coordinates": {
+                "x": 1280,
+                "y": 90
+            },
+            "jitter": {
+                "x": 7,
+                "y": 7
+            }
+        },
+        {
+            "name": "inv_slot",
+            "coordinates": {
+                "x": 1274,
+                "y": 620
+            },
+            "jitter": {
+                "x": 8,
+                "y": 7
+            }
+        },
+        {
+            "name": "ge_interface",
+            "coordinates": {
+                "x": 725,
+                "y": 500
+            },
+            "jitter": {
                 "x": 100,
-                "y": 120
+                "y": 100
+            }
+        },
+        {
+            "name": "ge_slot",
+            "coordinates": {
+                "x": 410,
+                "y": 380
+            },
+            "jitter": {
+                "x": 15,
+                "y": 15
+            }
+        },
+        {
+            "name": "ge_abort_offer",
+            "coordinates": {
+                "x": 712,
+                "y": 506
             },
             "jitter": {
                 "x": 5,
@@ -12,14 +56,58 @@
             }
         },
         {
-            "name": "grand_exchange",
+            "name": "ge_back",
             "coordinates": {
-                "x": 250,
-                "y": 251
+                "x": 403,
+                "y": 516
             },
             "jitter": {
-                "x": 12,
-                "y": 12
+                "x": 10,
+                "y": 3
+            }
+        },
+        {
+            "name": "ge_enter_quantity",
+            "coordinates": {
+                "x": 570,
+                "y": 445
+            },
+            "jitter": {
+                "x": 10,
+                "y": 5
+            }
+        },
+        {
+            "name": "ge_enter_price",
+            "coordinates": {
+                "x": 740,
+                "y": 445
+            },
+            "jitter": {
+                "x": 10,
+                "y": 5
+            }
+        },
+        {
+            "name": "ge_confirm",
+            "coordinates": {
+                "x": 615,
+                "y": 515
+            },
+            "jitter": {
+                "x": 65,
+                "y": 15
+            }
+        },
+        {
+            "name": "ge_collect",
+            "coordinates": {
+                "x": 806,
+                "y": 297
+            },
+            "jitter": {
+                "x": 30,
+                "y": 3
             }
         }
     ]

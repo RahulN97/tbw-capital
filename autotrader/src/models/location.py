@@ -5,5 +5,5 @@ from dataclasses import dataclass
 class Location:
     x: int
     y: int
-    x_jitter: int
-    y_jitter: int
+    x_jitter: int = 0
+    y_jitter: int = 0

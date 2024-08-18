@@ -8,4 +8,5 @@ import lombok.experimental.SuperBuilder;
 public abstract class StratConfig {
 	private boolean activated;
 	private int waitDuration;
+	private int maxOfferTime;
 }

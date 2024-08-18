@@ -2,7 +2,7 @@ package net.runelite.client.plugins.gamedataserver.model.exchange;
 
 import net.runelite.api.GrandExchangeOfferState;
 
-public enum ExchangeOrderState {
+public enum ExchangeSlotState {
 	EMPTY,
 	CANCELLED_BUY,
 	BUYING,
@@ -11,7 +11,7 @@ public enum ExchangeOrderState {
 	SELLING,
 	SOLD;
 
-	public static ExchangeOrderState fromGrandExchangeState(GrandExchangeOfferState state) {
-		return ExchangeOrderState.valueOf(state.name());
+	public static ExchangeSlotState fromGrandExchangeOfferState(GrandExchangeOfferState state) {
+		return ExchangeSlotState.valueOf(state.name());
 	}
 }

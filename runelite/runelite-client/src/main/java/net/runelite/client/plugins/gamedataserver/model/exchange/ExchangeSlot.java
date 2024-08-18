@@ -5,22 +5,22 @@ import lombok.Data;
 
 @Builder
 @Data
-public class ExchangeOrder {
+public class ExchangeSlot {
 	private int position;
 	private int itemId;
 	private int price;
 	private int quantityTransacted;
 	private int totalQuantity;
-	private ExchangeOrderState state;
+	private ExchangeSlotState state;
 
-	public static ExchangeOrder asEmpty(int position) {
-		return ExchangeOrder.builder()
+	public static ExchangeSlot asEmpty(int position) {
+		return ExchangeSlot.builder()
 			.position(position)
 			.itemId(-1)
 			.price(-1)
 			.quantityTransacted(-1)
 			.totalQuantity(-1)
-			.state(ExchangeOrderState.EMPTY)
+			.state(ExchangeSlotState.EMPTY)
 			.build();
 	}
 }
