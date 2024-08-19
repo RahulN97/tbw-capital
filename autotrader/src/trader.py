@@ -5,15 +5,18 @@ from typing import Dict, List, Optional
 
 from clients.gds.gds_client import GdsClient
 from clients.gds.models.config.live_config import LiveConfig
+from clients.gds.models.exchange.exchange import Exchange
+from clients.gds.models.inventory.inventory import Inventory
 from clients.gds.models.player.camera import Camera
 from clients.gds.models.player.player_location import PlayerLocation
 from clients.gds.models.player.player_state import PlayerState
+from clients.price.models.price_data_snapshot import PriceDataSnapshot
 from clients.price.price_client import PriceClient
 from exceptions import UnexpectedPlayerStateError, UnsupportedOrderActionError
 from interface.controller import Controller
 from models.order import BuyOrder, CancelOrder, InputOrder, OrderAction, SellOrder
 from strategy.strategy import BaseStrategy
-from strategy.strategy_factory import provide_strategy
+from strategy.strategy_factory import StrategyFactory
 from utils.logging import logger
 
 
@@ -30,14 +33,17 @@ class Trader:
         controller: Controller,
         price_client: PriceClient,
         gds_client: GdsClient,
+        strat_factory: StrategyFactory,
     ) -> None:
         self.autotrader_wait: float = autotrader_wait
         self.controller: Controller = controller
         self.price_client: PriceClient = price_client
         self.gds_client: GdsClient = gds_client
+        self.strat_factory: StrategyFactory = strat_factory
 
         self.autotrader_active: bool = True
         self.strat_run_times: Dict[str, float] = {}
+        self.item_map: Dict[int, str] = price_client.get_item_mapping()
 
         signal.signal(signal.SIGINT, self.stop)
         signal.signal(signal.SIGTERM, self.stop)
@@ -77,7 +83,7 @@ class Trader:
             if not strat_config.activated:
                 continue
 
-            strat: BaseStrategy = provide_strategy(
+            strat: BaseStrategy = self.strat_factory.provide_strategy(
                 top_level_config=live_config.top_level_config,
                 strat_config=strat_config,
             )
@@ -158,10 +164,31 @@ class Trader:
                 logger.info("Preparing player at exchange")
                 self.prepare_player()
 
+            logger.info("Fetching data snapshots required for strats")
+            item_map: Dict[int, str] = self.item_map.copy()
+            exchange: Exchange = self.gds_client.get_exchange()
+            inventory: Inventory = self.gds_client.get_inventory()
+            price_data: PriceDataSnapshot = self.price_client.get_price_data_snapshot()
+
             logger.info("Preparing strategies")
             strats: List[BaseStrategy] = self.prepare_strats(cur_time)
             for strat in strats:
-                actions: List[OrderAction] = strat.compute()
+                if strat.universe is not None:
+                    item_map: Dict[int, str] = {id: name for id, name in self.item_map.items() if id in strat.universe}
+                    price_data: PriceDataSnapshot = PriceDataSnapshot.filter_by_items(
+                        full_snapshot=price_data,
+                        item_ids=strat.universe,
+                    )
+
+                logger.info(f"Computing strat: {strat.name}.")
+                actions: List[OrderAction] = strat.compute(
+                    item_map=item_map,
+                    exchange=exchange,
+                    inventory=inventory,
+                    price_data=price_data,
+                )
+
+                logger.info(f"Processing order actions for strat: {strat.name}")
                 self.process_actions(actions)
                 # TODO: save trades, update state of world
 

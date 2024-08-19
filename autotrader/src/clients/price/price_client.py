@@ -1,10 +1,11 @@
-from typing import Any, Dict, FrozenSet, Optional
+from typing import Any, Dict, FrozenSet
 
 import requests
 from requests import Response, Session
 
 from clients.price.exceptions import PriceApiError, UnsupportedPriceWindowError
 from clients.price.models.price import AvgPrice, LatestPrice
+from clients.price.models.price_data_snapshot import PriceDataSnapshot
 from clients.price.models.price_window import PriceWindow
 
 
@@ -25,30 +26,25 @@ class PriceClient:
             raise PriceApiError(resp.text)
         return resp.json()
 
-    def get_item_mapping(self, filter_ids: Optional[FrozenSet[int]] = None) -> Dict[int, str]:
+    def get_item_mapping(self) -> Dict[int, str]:
         data: Dict[str, Any] = self.get("/mapping")
-        if filter_ids is None:
-            return {d["id"]: d["name"] for d in data}
-        return {d["id"]: d["name"] for d in data if d["id"] in filter_ids}
+        return {d["id"]: d["name"] for d in data}
 
-    def get_latest_prices(self, filter_ids: Optional[FrozenSet[int]] = None) -> Dict[int, LatestPrice]:
+    def get_latest_prices(self) -> Dict[int, LatestPrice]:
         resp_data: Dict[str, Any] = self.get("/latest")
         data: Dict[int, Dict[str, int]] = resp_data["data"]
 
-        price_map: Dict[int, LatestPrice] = {}
-        for item_id, price_data in data.items():
-            if filter_ids is not None and item_id not in filter_ids:
-                continue
-            price_map[item_id] = LatestPrice(
+        return {
+            item_id: LatestPrice(
                 low_price=price_data["low"],
                 high_price=price_data["high"],
                 low_time=price_data["lowTime"],
                 high_time=price_data["highTime"],
             )
+            for item_id, price_data in data.items()
+        }
 
-        return price_map
-
-    def get_avg_prices(self, window: PriceWindow, filter_ids: Optional[FrozenSet[int]] = None) -> Dict[int, AvgPrice]:
+    def get_avg_prices(self, window: PriceWindow) -> Dict[int, AvgPrice]:
         if window == PriceWindow.AVG_5M:
             endpoint: str = "/5m"
         elif window == PriceWindow.AVG_1H:
@@ -59,16 +55,20 @@ class PriceClient:
         resp_data: Dict[str, Any] = self.get(endpoint)
         data: Dict[int, Dict[str, int]] = resp_data["data"]
 
-        price_map: Dict[int, AvgPrice] = {}
-        for item_id, price_data in data.items():
-            if filter_ids is not None and item_id not in filter_ids:
-                continue
-            price_map[item_id] = AvgPrice(
+        return {
+            item_id: AvgPrice(
                 low_price=price_data["avgLowPrice"],
                 high_price=price_data["avgHighPrice"],
                 low_volume=price_data["lowPriceVolume"],
                 high_volume=price_data["highPriceVolume"],
                 price_window=window,
             )
+            for item_id, price_data in data.items()
+        }
 
-        return price_map
+    def get_price_data_snapshot(self) -> PriceDataSnapshot:
+        latest_map: Dict[int, LatestPrice] = self.get_latest_prices()
+        avg_5m_map: Dict[int, AvgPrice] = self.get_avg_prices(window=PriceWindow.AVG_5M)
+        avg_1h_map: Dict[int, AvgPrice] = self.get_avg_prices(window=PriceWindow.AVG_1H)
+
+        return PriceDataSnapshot(latest_map=latest_map, avg_5m_map=avg_5m_map, avg_1h_map=avg_1h_map)

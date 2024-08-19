@@ -29,7 +29,7 @@ class ScreenLocator:
 
     @staticmethod
     def build_location_map() -> Dict[str, Location]:
-        with open("locations.json", "r") as f:
+        with open("data/locations.json", "r") as f:
             locations: List[Dict[str, Any]] = json.load(f)["locations"]
         return {
             loc["name"]: Location(
