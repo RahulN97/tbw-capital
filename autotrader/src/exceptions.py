@@ -7,7 +7,7 @@ class UnexpectedPlayerStateError(Exception):
         super().__init__(msg)
 
 
-class UnsupportedOrderAction(Exception):
+class UnsupportedOrderActionError(Exception):
     def __init__(self, actual: str, expected: str) -> None:
         msg: str = f"Unsupported OrderAction type: {actual}. Expected type {expected}"
         super().__init__(msg)

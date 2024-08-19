@@ -11,7 +11,6 @@ class AppConfig:
         self.autotrader_start_delay: float = float(self._extract_env_var("AUTOTRADER_START_DELAY"))
         self.autotrader_wait: float = float(self._extract_env_var("AUTOTRADER_WAIT"))
         self.humanize: bool = self._to_bool(self._extract_env_var("HUMANIZE"))
-        self.price_url: str = self._extract_env_var("PRICE_URL")
         self.gds_host: str = self._extract_env_var("GDS_HOST")
         self.gds_port: int = int(self._extract_env_var("GDS_PORT"))
 

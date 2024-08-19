@@ -2,6 +2,8 @@ from typing import List
 
 from clients.gds.models.config.strat_config import MMStratConfig
 from clients.gds.models.config.top_level_config import TopLevelConfig
+from clients.gds.models.exchange.exchange import Exchange
+from clients.gds.models.inventory.inventory import Inventory
 from models.order import BuyOrder, CancelOrder, OrderAction, SellOrder
 from strategy.strategy import BaseStrategy
 
@@ -15,7 +17,7 @@ class MMStrategy(BaseStrategy):
     def name(self) -> str:
         return "Market Maker"
 
-    def compute(self) -> List[OrderAction]:
+    def compute(self, exchange: Exchange, inventory: Inventory) -> List[OrderAction]:
         # for demo
         return [
             BuyOrder(ge_slot=0, name="nature rune", price=150, quantity=10),

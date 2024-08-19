@@ -13,7 +13,7 @@ def create_trader(app_config: AppConfig) -> Trader:
     app_config: AppConfig = AppConfig()
     locator: ScreenLocator = ScreenLocator(randomize=app_config.humanize)
     controller: Controller = Controller(locator=locator, randomize=app_config.humanize)
-    price_client: PriceClient = PriceClient(url=app_config.price_url)
+    price_client: PriceClient = PriceClient()
     gds_client: GdsClient = GdsClient(gds_host=app_config.gds_host, gds_port=app_config.gds_port)
     return Trader(
         autotrader_wait=app_config.autotrader_wait,

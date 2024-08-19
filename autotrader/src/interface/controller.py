@@ -10,12 +10,12 @@ from interface.screen_locator import ScreenLocator
 
 class Controller:
 
-    MIN_PAUSE_TIME: float = 1.0
-    MAX_PAUSE_TIME: float = 1.75
+    MIN_PAUSE_TIME: float = 0.8
+    MAX_PAUSE_TIME: float = 1.6
 
-    MAX_CLICK_DURATION: float = 0.5
-    MAX_MOVE_DURATION: float = 1.5
-    MAX_TYPE_INTERVAL: float = 0.5
+    MAX_CLICK_DURATION: float = 0.3
+    MAX_MOVE_DURATION: float = 1.2
+    MAX_TYPE_INTERVAL: float = 0.3
 
     FULL_ZOOM_SCROLL_AMT: int = 30
 

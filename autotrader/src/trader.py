@@ -9,7 +9,7 @@ from clients.gds.models.player.camera import Camera
 from clients.gds.models.player.player_location import PlayerLocation
 from clients.gds.models.player.player_state import PlayerState
 from clients.price.price_client import PriceClient
-from exceptions import UnexpectedPlayerStateError, UnsupportedOrderAction
+from exceptions import UnexpectedPlayerStateError, UnsupportedOrderActionError
 from interface.controller import Controller
 from models.order import BuyOrder, CancelOrder, InputOrder, OrderAction, SellOrder
 from strategy.strategy import BaseStrategy
@@ -118,13 +118,19 @@ class Trader:
                 elif isinstance(action, SellOrder):
                     self.controller.click_inventory_slot(action.inventory_slot)
                 else:
-                    raise UnsupportedOrderAction(actual=type(action).__name__, expected=InputOrder.__name__)
+                    raise UnsupportedOrderActionError(
+                        actual=type(action).__name__,
+                        expected=InputOrder.__name__,
+                    )
                 submit_msg: str = f"Submitting {type(action).__name__} in GE slot: {action.ge_slot}"
                 order_msg: str = f"item {action.name}, price: {action.price}, quantity: {action.quantity}"
                 logger.info(f"{submit_msg} - {order_msg}")
                 self.input_order(action)
             else:
-                raise UnsupportedOrderAction(actual=type(action).__name__, expected=OrderAction.__name__)
+                raise UnsupportedOrderActionError(
+                    actual=type(action).__name__,
+                    expected=OrderAction.__name__,
+                )
             self.controller.click_location("ge_collect")
         self.controller.exit_ge()
 
