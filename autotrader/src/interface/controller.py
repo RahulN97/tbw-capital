@@ -120,6 +120,7 @@ class Controller:
         self.click(x, y)
 
     def open_ge(self) -> None:
+        self.press("esc")
         self.click_location("ge_interface")
 
     def exit_ge(self) -> None:

@@ -1,3 +1,4 @@
+import random
 import signal
 import time
 import types
@@ -6,13 +7,19 @@ from typing import Dict, List, Optional, Set
 from clients.gds.gds_client import GdsClient
 from clients.gds.models.config.live_config import LiveConfig
 from clients.gds.models.exchange.exchange import Exchange
+from clients.gds.models.exchange.exchange_slot_state import ExchangeSlotState
 from clients.gds.models.inventory.inventory import Inventory
 from clients.gds.models.player.camera import Camera
 from clients.gds.models.player.player_location import PlayerLocation
 from clients.gds.models.player.player_state import PlayerState
 from clients.price.models.price_data_snapshot import PriceDataSnapshot
 from clients.price.price_client import PriceClient
-from exceptions import UnexpectedPlayerStateError, UnsupportedOrderActionError
+from exceptions import (
+    MissingInventoryItemError,
+    NoAvailableGeSlotError,
+    UnexpectedPlayerStateError,
+    UnsupportedOrderActionError,
+)
 from interface.controller import Controller
 from models.order import BuyOrder, CancelOrder, InputOrder, OrderAction, SellOrder
 from strategy.strategy import BaseStrategy
@@ -26,6 +33,8 @@ class Trader:
         camera=Camera(z=-878, yaw=0, scale=3600),
         location=PlayerLocation(x=3165, y=3487),
     )
+    MIN_ORDER_ACTION_PAUSE: float = 0.5
+    MAX_ORDER_ACTION_PAUSE: float = 1.5
 
     def __init__(
         self,
@@ -107,6 +116,20 @@ class Trader:
 
         return strats_to_compute
 
+    def get_next_available_ge_slot(self) -> int:
+        exchange: Exchange = self.gds_client.get_exchange()
+        for slot in exchange.slots:
+            if slot.state == ExchangeSlotState.EMPTY:
+                return slot.position
+        raise NoAvailableGeSlotError()
+
+    def get_inv_slot(self, item_id: int) -> int:
+        inventory: Inventory = self.gds_client.get_inventory()
+        for item in inventory.items:
+            if item.id == item_id:
+                return item.inventory_position
+        raise MissingInventoryItemError(item_id=item_id)
+
     def input_order(self, order: InputOrder) -> None:
         self.controller.click_location("ge_enter_quantity")
         self.controller.type(str(order.quantity))
@@ -120,29 +143,35 @@ class Trader:
 
     def process_actions(self, actions: List[OrderAction]) -> None:
         self.controller.open_ge()
+
         for action in actions:
+            action_pause: float = random.uniform(self.MIN_ORDER_ACTION_PAUSE, self.MAX_ORDER_ACTION_PAUSE)
+            time.sleep(action_pause)
+
             if not self.autotrader_active:
                 raise Exception("Autotrader process terminated unexpectedly")
+
             if isinstance(action, CancelOrder):
-                logger.info(f"Cancelling order in GE slot: {action.ge_slot} for item {action.name}")
+                logger.info(f"Cancelling order in GE slot: {action.ge_slot}")
                 self.controller.click_ge_slot(action.ge_slot)
                 self.controller.click_location("ge_abort_offer")
                 self.controller.click_location("ge_back")
             elif isinstance(action, InputOrder):
+                ge_slot: int = self.get_next_available_ge_slot()
                 if isinstance(action, BuyOrder):
-                    self.controller.click_ge_slot(action.ge_slot)
-                    self.controller.type(action.name)
+                    self.controller.click_ge_slot(ge_slot)
+                    self.controller.type(action.item_name)
                     self.controller.press("enter")
                 elif isinstance(action, SellOrder):
-                    self.controller.click_inventory_slot(action.inventory_slot)
+                    inv_slot: int = self.get_inv_slot(action.item_id)
+                    self.controller.click_inventory_slot(inv_slot)
                 else:
                     raise UnsupportedOrderActionError(
                         actual=type(action).__name__,
                         expected=InputOrder.__name__,
                     )
-                submit_msg: str = f"Submitting {type(action).__name__} in GE slot: {action.ge_slot}"
-                order_msg: str = f"item {action.name}, price: {action.price}, quantity: {action.quantity}"
-                logger.info(f"{submit_msg} - {order_msg}")
+                order_msg: str = f"item {action.item_name}, price: {action.price}, quantity: {action.quantity}"
+                logger.info(f"Submitting {type(action).__name__} in GE slot {ge_slot} - {order_msg}")
                 self.input_order(action)
             else:
                 raise UnsupportedOrderActionError(
@@ -150,6 +179,7 @@ class Trader:
                     expected=OrderAction.__name__,
                 )
             self.controller.click_location("ge_collect")
+
         self.controller.exit_ge()
 
     def wait(self, trading_enabled: bool, cur_time: float) -> None:

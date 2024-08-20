@@ -36,9 +36,11 @@ class MMStrategy(BaseStrategy):
         price_data: PriceDataSnapshot,
     ) -> List[OrderAction]:
         # for demo
+        item_id: int = 561
+        item_name: str = self.item_map[item_id]
         return [
-            BuyOrder(ge_slot=0, name="nature rune", price=150, quantity=10),
-            SellOrder(ge_slot=0, name="nature rune", price=160, quantity=5, inventory_slot=2),
-            CancelOrder(ge_slot=0, name="nature rune"),
-            SellOrder(ge_slot=0, name="nature rune", price=100, quantity=10, inventory_slot=2),
+            BuyOrder(item_id=item_id, item_name=item_name, price=150, quantity=10),
+            SellOrder(item_id=item_id, item_name=item_name, price=160, quantity=5),
+            CancelOrder(ge_slot=1),
+            SellOrder(item_id=item_id, item_name=item_name, price=100, quantity=10),
         ]
