@@ -8,6 +8,7 @@ from utils.logging import DEFAULT_LOG_LEVEL, logger
 class AppConfig:
 
     def __init__(self) -> None:
+        self.f2p: bool = self._to_bool(self._extract_env_var("F2P"))
         self.autotrader_start_delay: float = float(self._extract_env_var("AUTOTRADER_START_DELAY"))
         self.autotrader_wait: float = float(self._extract_env_var("AUTOTRADER_WAIT"))
         self.humanize: bool = self._to_bool(self._extract_env_var("HUMANIZE"))

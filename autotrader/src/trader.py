@@ -38,12 +38,14 @@ class Trader:
 
     def __init__(
         self,
+        f2p: bool,
         autotrader_wait: float,
         controller: Controller,
         price_client: PriceClient,
         gds_client: GdsClient,
         strat_factory: StrategyFactory,
     ) -> None:
+        self.f2p: bool = f2p
         self.autotrader_wait: float = autotrader_wait
         self.controller: Controller = controller
         self.price_client: PriceClient = price_client
@@ -128,7 +130,7 @@ class Trader:
         for item in inventory.items:
             if item.id == item_id:
                 return item.inventory_position
-        raise MissingInventoryItemError(item_id=item_id)
+        raise MissingInventoryItemError(item_id)
 
     def input_order(self, order: InputOrder) -> None:
         self.controller.click_location("ge_enter_quantity")

@@ -17,6 +17,7 @@ class BaseStrategy(ABC):
         strat_config: StratConfig,
         universe: Optional[List[int]],
         item_map: Dict[int, str],
+        f2p: bool,
     ) -> None:
         self.top_level_config: TopLevelConfig = top_level_config
         self.strat_config: StratConfig = strat_config
@@ -24,6 +25,7 @@ class BaseStrategy(ABC):
         self.item_map: Dict[int, str] = (
             item_map if universe is None else {id: name for id, name in item_map.items() if id in universe}
         )
+        self.f2p: bool = f2p
         self.next_run_time: float = 0.0
 
     @property

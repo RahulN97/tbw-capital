@@ -18,6 +18,7 @@ def create_trader(app_config: AppConfig) -> Trader:
     gds_client: GdsClient = GdsClient(gds_host=app_config.gds_host, gds_port=app_config.gds_port)
     strat_factory: StrategyFactory = StrategyFactory(price_client=price_client)
     return Trader(
+        f2p=app_config.f2p,
         autotrader_wait=app_config.autotrader_wait,
         controller=controller,
         price_client=price_client,

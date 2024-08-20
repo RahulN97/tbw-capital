@@ -16,12 +16,13 @@ class StrategyFactory:
         with open("data/universe.json", "r") as f:
             self.universe_map: Dict[str, List[int]] = json.load(f)
 
-    def provide_strategy(self, top_level_config: TopLevelConfig, strat_config: StratConfig) -> BaseStrategy:
+    def provide_strategy(self, top_level_config: TopLevelConfig, strat_config: StratConfig, f2p: bool) -> BaseStrategy:
         if isinstance(strat_config, MMStratConfig):
             return MMStrategy(
                 top_level_config=top_level_config,
                 strat_config=strat_config,
                 universe=self.universe_map.get(MMStrategy.__name__.lower()),
                 item_map=self.item_map.copy(),
+                f2p=f2p,
             )
         raise UnsupportedStratError(type(strat_config).__name__)

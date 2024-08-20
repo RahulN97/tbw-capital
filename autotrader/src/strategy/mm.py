@@ -17,12 +17,14 @@ class MMStrategy(BaseStrategy):
         strat_config: MMStratConfig,
         universe: Optional[List[int]],
         item_map: Dict[int, str],
+        f2p: bool,
     ) -> None:
         super().__init__(
             top_level_config=top_level_config,
             strat_config=strat_config,
             universe=universe,
             item_map=item_map,
+            f2p=f2p,
         )
 
     @property
