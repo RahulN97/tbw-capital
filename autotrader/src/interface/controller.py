@@ -10,11 +10,16 @@ from interface.screen_locator import ScreenLocator
 
 class Controller:
 
-    MIN_PAUSE_TIME: float = 0.8
-    MAX_PAUSE_TIME: float = 1.6
+    MIN_PAUSE_TIME: float = 1.0
+    MAX_PAUSE_TIME: float = 1.5
 
-    MAX_CLICK_DURATION: float = 0.3
-    MAX_MOVE_DURATION: float = 1.2
+    MIN_CLICK_DURATION: float = 0.1
+    MAX_CLICK_DURATION: float = 0.4
+
+    MIN_MOVE_DURATION: float = 0.2
+    MAX_MOVE_DURATION: float = 1.0
+
+    MIN_TYPE_INTERVAL: float = 0.1
     MAX_TYPE_INTERVAL: float = 0.3
 
     FULL_ZOOM_SCROLL_AMT: int = 30
@@ -61,7 +66,7 @@ class Controller:
         tween: Callable[[float], float] = pytweening.linear,
     ) -> None:
         if self.randomize:
-            duration = random.uniform(0, self.MAX_CLICK_DURATION)
+            duration = random.uniform(self.MIN_CLICK_DURATION, self.MAX_CLICK_DURATION)
             tween = random.choice(self.TWEEN_FUNCTIONS)
         pyautogui.leftClick(x=x, y=y, duration=duration, tween=tween)
 
@@ -74,14 +79,14 @@ class Controller:
         tween: Callable[[float], float] = pytweening.linear,
     ) -> None:
         if self.randomize:
-            duration = random.uniform(0, self.MAX_MOVE_DURATION)
+            duration = random.uniform(self.MIN_MOVE_DURATION, self.MAX_MOVE_DURATION)
             tween = random.choice(self.TWEEN_FUNCTIONS)
         pyautogui.moveTo(x=x, y=y, duration=duration, tween=tween)
 
     @pause_action
     def type(self, text: str, interval: float = 0.0) -> None:
         if self.randomize:
-            interval: float = random.uniform(0, self.MAX_TYPE_INTERVAL)
+            interval: float = random.uniform(self.MIN_TYPE_INTERVAL, self.MAX_TYPE_INTERVAL)
         pyautogui.write(message=text, interval=interval)
 
     @pause_action

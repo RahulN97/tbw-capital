@@ -1,7 +1,7 @@
 import signal
 import time
 import types
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from clients.gds.gds_client import GdsClient
 from clients.gds.models.config.live_config import LiveConfig
@@ -42,8 +42,7 @@ class Trader:
         self.strat_factory: StrategyFactory = strat_factory
 
         self.autotrader_active: bool = True
-        self.strat_run_times: Dict[str, float] = {}
-        self.item_map: Dict[int, str] = price_client.get_item_mapping()
+        self.active_strats: Dict[str, BaseStrategy] = {}
 
         signal.signal(signal.SIGINT, self.stop)
         signal.signal(signal.SIGTERM, self.stop)
@@ -75,27 +74,38 @@ class Trader:
                 expected_player_state=self.EXPECTED_PLAYER_STATE,
             )
 
-    def prepare_strats(self, cur_time: float) -> List[BaseStrategy]:
+    def prepare_strats(self, cur_time: float) -> None:
         live_config: LiveConfig = self.gds_client.get_live_config()
 
-        strats: List[BaseStrategy] = []
+        strats_to_remove: Set[str] = set()
+        strats_to_compute: List[BaseStrategy] = []
+
         for strat_config in live_config.strat_configs:
             if not strat_config.activated:
+                strats_to_remove.add(strat_config.strat_name)
                 continue
 
-            strat: BaseStrategy = self.strat_factory.provide_strategy(
-                top_level_config=live_config.top_level_config,
-                strat_config=strat_config,
-            )
+            strat: Optional[BaseStrategy] = self.active_strats.get(strat_config.strat_name)
+            if strat is None:
+                strat = self.strat_factory.provide_strategy(
+                    top_level_config=live_config.top_level_config,
+                    strat_config=strat_config,
+                )
+                self.active_strats[strat.name] = strat
+            else:
+                strat.top_level_config = live_config.top_level_config
+                strat.strat_config = strat_config
 
-            next_run_time: float = self.strat_run_times.get(strat.name, 0.0)
-            if cur_time < next_run_time:
+            if cur_time < strat.next_run_time:
                 continue
 
-            self.strat_run_times[strat.name] = cur_time + strat_config.wait_duration
-            strats.append(strat)
+            strat.next_run_time = cur_time + strat_config.wait_duration
+            strats_to_compute.append(strat)
 
-        return strats
+        for strat_name in strats_to_remove:
+            self.active_strats.pop(strat_name, None)
+
+        return strats_to_compute
 
     def input_order(self, order: InputOrder) -> None:
         self.controller.click_location("ge_enter_quantity")
@@ -111,6 +121,8 @@ class Trader:
     def process_actions(self, actions: List[OrderAction]) -> None:
         self.controller.open_ge()
         for action in actions:
+            if not self.autotrader_active:
+                raise Exception("Autotrader process terminated unexpectedly")
             if isinstance(action, CancelOrder):
                 logger.info(f"Cancelling order in GE slot: {action.ge_slot} for item {action.name}")
                 self.controller.click_ge_slot(action.ge_slot)
@@ -142,7 +154,8 @@ class Trader:
 
     def wait(self, trading_enabled: bool, cur_time: float) -> None:
         if trading_enabled:
-            next_run_time: float = min(self.strat_run_times.values(), default=cur_time + 1)
+            strat_run_times: List[float] = [s.next_run_time for s in self.active_strats.values()]
+            next_run_time: float = min(strat_run_times, default=cur_time + 1)
             wait_time: float = max(next_run_time - cur_time, 0.0)
         else:
             wait_time: float = self.autotrader_wait
@@ -165,24 +178,21 @@ class Trader:
                 self.prepare_player()
 
             logger.info("Fetching data snapshots required for strats")
-            item_map: Dict[int, str] = self.item_map.copy()
             exchange: Exchange = self.gds_client.get_exchange()
             inventory: Inventory = self.gds_client.get_inventory()
             price_data: PriceDataSnapshot = self.price_client.get_price_data_snapshot()
 
             logger.info("Preparing strategies")
-            strats: List[BaseStrategy] = self.prepare_strats(cur_time)
-            for strat in strats:
+            strats_to_compute: List[BaseStrategy] = self.prepare_strats(cur_time)
+            for strat in strats_to_compute:
                 if strat.universe is not None:
-                    item_map: Dict[int, str] = {id: name for id, name in self.item_map.items() if id in strat.universe}
                     price_data: PriceDataSnapshot = PriceDataSnapshot.filter_by_items(
                         full_snapshot=price_data,
                         item_ids=strat.universe,
                     )
 
-                logger.info(f"Computing strat: {strat.name}.")
+                logger.info(f"Computing strat: {strat.name}")
                 actions: List[OrderAction] = strat.compute(
-                    item_map=item_map,
                     exchange=exchange,
                     inventory=inventory,
                     price_data=price_data,

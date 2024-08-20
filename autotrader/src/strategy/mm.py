@@ -16,8 +16,14 @@ class MMStrategy(BaseStrategy):
         top_level_config: TopLevelConfig,
         strat_config: MMStratConfig,
         universe: Optional[List[int]],
+        item_map: Dict[int, str],
     ) -> None:
-        super().__init__(top_level_config=top_level_config, strat_config=strat_config, universe=universe)
+        super().__init__(
+            top_level_config=top_level_config,
+            strat_config=strat_config,
+            universe=universe,
+            item_map=item_map,
+        )
 
     @property
     def name(self) -> str:
@@ -25,7 +31,6 @@ class MMStrategy(BaseStrategy):
 
     def compute(
         self,
-        item_map: Dict[int, str],
         exchange: Exchange,
         inventory: Inventory,
         price_data: PriceDataSnapshot,
@@ -33,7 +38,7 @@ class MMStrategy(BaseStrategy):
         # for demo
         return [
             BuyOrder(ge_slot=0, name="nature rune", price=150, quantity=10),
-            SellOrder(ge_slot=0, name="nature rune", price=160, quantity=5, inventory_slot=4),
+            SellOrder(ge_slot=0, name="nature rune", price=160, quantity=5, inventory_slot=2),
             CancelOrder(ge_slot=0, name="nature rune"),
-            SellOrder(ge_slot=0, name="nature rune", price=100, quantity=10, inventory_slot=4),
+            SellOrder(ge_slot=0, name="nature rune", price=100, quantity=10, inventory_slot=2),
         ]

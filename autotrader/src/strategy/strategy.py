@@ -16,10 +16,15 @@ class BaseStrategy(ABC):
         top_level_config: TopLevelConfig,
         strat_config: StratConfig,
         universe: Optional[List[int]],
+        item_map: Dict[int, str],
     ) -> None:
         self.top_level_config: TopLevelConfig = top_level_config
         self.strat_config: StratConfig = strat_config
         self.universe: Optional[List[int]] = universe
+        self.item_map: Dict[int, str] = (
+            item_map if universe is None else {id: name for id, name in item_map.items() if id in universe}
+        )
+        self.next_run_time: float = 0.0
 
     @property
     @abstractmethod
