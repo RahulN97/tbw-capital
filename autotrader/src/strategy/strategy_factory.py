@@ -3,6 +3,7 @@ from typing import Dict, List
 
 from clients.gds.models.config.strat_config import MMStratConfig, StratConfig
 from clients.gds.models.config.top_level_config import TopLevelConfig
+from clients.price.models.item_metadata import ItemMetadata
 from clients.price.price_client import PriceClient
 from strategy.exceptions import UnsupportedStratError
 from strategy.mm import MMStrategy
@@ -12,7 +13,7 @@ from strategy.strategy import BaseStrategy
 class StrategyFactory:
 
     def __init__(self, price_client: PriceClient) -> None:
-        self.item_map: Dict[int, str] = price_client.get_item_mapping()
+        self.item_map: Dict[int, ItemMetadata] = price_client.get_item_mapping()
         with open("data/universe.json", "r") as f:
             self.universe_map: Dict[str, List[int]] = json.load(f)
 

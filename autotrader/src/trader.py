@@ -101,8 +101,9 @@ class Trader:
                 strat = self.strat_factory.provide_strategy(
                     top_level_config=live_config.top_level_config,
                     strat_config=strat_config,
+                    f2p=self.f2p,
                 )
-                self.active_strats[strat.name] = strat
+                self.active_strats[strat_config.strat_name] = strat
             else:
                 strat.top_level_config = live_config.top_level_config
                 strat.strat_config = strat_config
@@ -114,6 +115,7 @@ class Trader:
             strats_to_compute.append(strat)
 
         for strat_name in strats_to_remove:
+            logger.info(f"Deactivated {strat_name}. Removing it from active strats")
             self.active_strats.pop(strat_name, None)
 
         return strats_to_compute
@@ -185,7 +187,7 @@ class Trader:
         self.controller.exit_ge()
 
     def wait(self, trading_enabled: bool, cur_time: float) -> None:
-        if trading_enabled:
+        if trading_enabled and self.active_strats:
             strat_run_times: List[float] = [s.next_run_time for s in self.active_strats.values()]
             next_run_time: float = min(strat_run_times, default=cur_time + 1)
             wait_time: float = max(next_run_time - cur_time, 0.0)

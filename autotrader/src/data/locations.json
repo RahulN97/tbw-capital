@@ -3,7 +3,7 @@
         {
             "name": "compass",
             "coordinates": {
-                "x": 1280,
+                "x": 1038,
                 "y": 90
             },
             "jitter": {
@@ -14,7 +14,7 @@
         {
             "name": "inv_slot",
             "coordinates": {
-                "x": 1274,
+                "x": 1032,
                 "y": 620
             },
             "jitter": {
@@ -25,7 +25,7 @@
         {
             "name": "ge_interface",
             "coordinates": {
-                "x": 725,
+                "x": 600,
                 "y": 500
             },
             "jitter": {
@@ -36,7 +36,7 @@
         {
             "name": "ge_slot",
             "coordinates": {
-                "x": 410,
+                "x": 290,
                 "y": 380
             },
             "jitter": {
@@ -47,7 +47,7 @@
         {
             "name": "ge_abort_offer",
             "coordinates": {
-                "x": 712,
+                "x": 590,
                 "y": 506
             },
             "jitter": {
@@ -58,7 +58,7 @@
         {
             "name": "ge_back",
             "coordinates": {
-                "x": 403,
+                "x": 282,
                 "y": 516
             },
             "jitter": {
@@ -69,7 +69,7 @@
         {
             "name": "ge_enter_quantity",
             "coordinates": {
-                "x": 570,
+                "x": 447,
                 "y": 445
             },
             "jitter": {
@@ -80,7 +80,7 @@
         {
             "name": "ge_enter_price",
             "coordinates": {
-                "x": 740,
+                "x": 618,
                 "y": 445
             },
             "jitter": {
@@ -91,7 +91,7 @@
         {
             "name": "ge_confirm",
             "coordinates": {
-                "x": 615,
+                "x": 492,
                 "y": 515
             },
             "jitter": {
@@ -102,7 +102,7 @@
         {
             "name": "ge_collect",
             "coordinates": {
-                "x": 806,
+                "x": 688,
                 "y": 297
             },
             "jitter": {

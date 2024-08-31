@@ -4,6 +4,7 @@ import requests
 from requests import Response, Session
 
 from clients.price.exceptions import PriceApiError, UnsupportedPriceWindowError
+from clients.price.models.item_metadata import ItemMetadata
 from clients.price.models.price import AvgPrice, LatestPrice
 from clients.price.models.price_data_snapshot import PriceDataSnapshot
 from clients.price.models.price_window import PriceWindow
@@ -26,9 +27,17 @@ class PriceClient:
             raise PriceApiError(resp.text)
         return resp.json()
 
-    def get_item_mapping(self) -> Dict[int, str]:
+    def get_item_mapping(self) -> Dict[int, ItemMetadata]:
         data: Dict[str, Any] = self.get("/mapping")
-        return {d["id"]: d["name"] for d in data}
+        return {
+            d["id"]: ItemMetadata(
+                id=d["id"],
+                name=d["name"],
+                limit=d["limit"],
+                members=d["members"],
+            )
+            for d in data
+        }
 
     def get_latest_prices(self) -> Dict[int, LatestPrice]:
         resp_data: Dict[str, Any] = self.get("/latest")
