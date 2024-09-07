@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional
 
+from core.clients.redis.redis_client import RedisClient
+
 from clients.gds.models.config.strat_config import MMStratConfig
 from clients.gds.models.config.top_level_config import TopLevelConfig
 from clients.gds.models.exchange.exchange import Exchange
@@ -25,18 +27,18 @@ class MMStrategy(BaseStrategy):
 
     def __init__(
         self,
+        redis_client: RedisClient,
         top_level_config: TopLevelConfig,
         strat_config: MMStratConfig,
         universe: Optional[List[int]],
         item_map: Dict[int, ItemMetadata],
-        f2p: bool,
     ) -> None:
         super().__init__(
+            redis_client=redis_client,
             top_level_config=top_level_config,
             strat_config=strat_config,
             universe=universe,
             item_map=item_map,
-            f2p=f2p,
         )
         self.items_traded: List[int] = []
 
@@ -115,4 +117,5 @@ class MMStrategy(BaseStrategy):
             buys=buys,
         )
         self.validate_orders(orders)
+        return orders
         return orders

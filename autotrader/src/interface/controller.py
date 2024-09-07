@@ -85,6 +85,7 @@ class Controller:
 
     @pause_action
     def type(self, text: str, interval: float = 0.0) -> None:
+        # TODO: make sure text is not typed into chat
         if self.randomize:
             interval: float = random.uniform(self.MIN_TYPE_INTERVAL, self.MAX_TYPE_INTERVAL)
         pyautogui.write(message=text, interval=interval)

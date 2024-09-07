@@ -1,26 +1,38 @@
 import time
 
+from core.clients.redis.redis_client import RedisClient
+from core.logger import logger
+
 from clients.gds.gds_client import GdsClient
 from clients.price.price_client import PriceClient
-from config.app_config import AppConfig
+from config.autotrader_config import AutotraderConfig
 from interface.controller import Controller
 from interface.screen_locator import ScreenLocator
 from strategy.strategy_factory import StrategyFactory
 from trader import Trader
-from utils.logging import logger
 
 
-def create_trader(app_config: AppConfig) -> Trader:
-    app_config: AppConfig = AppConfig()
-    locator: ScreenLocator = ScreenLocator(randomize=app_config.humanize)
-    controller: Controller = Controller(locator=locator, randomize=app_config.humanize)
+def create_trader(config: AutotraderConfig) -> Trader:
+    config: AutotraderConfig = AutotraderConfig()
+
+    locator: ScreenLocator = ScreenLocator(randomize=config.humanize)
+    controller: Controller = Controller(locator=locator, randomize=config.humanize)
+
+    redis_client: RedisClient = RedisClient()
     price_client: PriceClient = PriceClient()
-    gds_client: GdsClient = GdsClient(gds_host=app_config.gds_host, gds_port=app_config.gds_port)
-    strat_factory: StrategyFactory = StrategyFactory(price_client=price_client)
+    gds_client: GdsClient = GdsClient(gds_host=config.gds_host, gds_port=config.gds_port)
+
+    strat_factory: StrategyFactory = StrategyFactory(
+        redis_client=redis_client,
+        price_client=price_client,
+        is_f2p=gds_client.is_f2p,
+    )
+
     return Trader(
-        f2p=app_config.f2p,
-        autotrader_wait=app_config.autotrader_wait,
+        env=config.env,
+        autotrader_wait=config.autotrader_wait,
         controller=controller,
+        redis_client=redis_client,
         price_client=price_client,
         gds_client=gds_client,
         strat_factory=strat_factory,
@@ -28,12 +40,12 @@ def create_trader(app_config: AppConfig) -> Trader:
 
 
 def main() -> None:
-    app_config: AppConfig = AppConfig()
+    config: AutotraderConfig = AutotraderConfig()
 
-    logger.info(f"Waiting {int(app_config.autotrader_start_delay)} seconds before autotrader is activated.")
-    time.sleep(app_config.autotrader_start_delay)
+    logger.info(f"Waiting {int(config.autotrader_start_delay)} seconds before autotrader is activated.")
+    time.sleep(config.autotrader_start_delay)
 
-    trader: Trader = create_trader(app_config)
+    trader: Trader = create_trader(config)
     trader.start()
 
 

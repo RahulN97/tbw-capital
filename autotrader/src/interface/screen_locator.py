@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 
 from interface.container_metadata import ContainerMetadata
 from interface.exceptions import MissingCoordinatesError, SlotIndexError
-from models.location import Location
+from interface.location import Location
 
 
 class ScreenLocator:

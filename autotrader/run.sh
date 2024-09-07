@@ -1,4 +1,7 @@
-echo "Running locally. Sourcing env vars"
+#!/bin/bash
+
+echo "Starting AutoTrader"
+
 set -a
 source .env
 set +a

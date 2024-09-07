@@ -1,6 +1,7 @@
+from functools import cached_property
 from typing import Any, Dict, List
 
-import requests
+from core.clients.base_client import BaseClient
 from requests import Response, Session
 
 from clients.gds.exceptions import GdsApiError, GdsUnexpectedResponseError
@@ -15,12 +16,15 @@ from clients.gds.models.inventory.item import Item
 from clients.gds.models.player.camera import Camera
 from clients.gds.models.player.player_location import PlayerLocation
 from clients.gds.models.player.player_state import PlayerState
+from clients.gds.models.session_metadata import SessionMetadata
 
 
-class GdsClient:
+class GdsClient(BaseClient):
+
+    MAX_F2P_EXCHANGE_SLOTS: int = 3
 
     def __init__(self, gds_host: str, gds_port: int) -> None:
-        self.session: Session = requests.Session()
+        self.session: Session = Session()
         self.url: str = f"http://{gds_host}:{gds_port}"
 
     def get(self, endpoint: str) -> Dict[str, Any]:
@@ -28,6 +32,22 @@ class GdsClient:
         if resp.status_code != 200:
             raise GdsApiError(resp.text)
         return resp.json()
+
+    @cached_property
+    def is_f2p(self) -> bool:
+        endpoint: str = "/membership"
+        data: Dict[str, bool] = self.get(endpoint)
+        return data["isF2p"]
+
+    def establish_connection(self) -> None:
+        data: Dict[str, Any] = self.session.get("/health")
+        if data["health"] != "healthy":
+            raise GdsApiError(f"RuneLite server health status: {data['health']}")
+
+    def get_session_metadata(self) -> SessionMetadata:
+        endpoint: str = "/session"
+        data: Dict[str, Any] = self.get(endpoint)
+        return SessionMetadata(id=data["id"], start_time=data["startTime"])
 
     def get_live_config(self) -> LiveConfig:
         endpoint: str = "/config"
@@ -73,7 +93,7 @@ class GdsClient:
             )
             for slot in data["slots"]
         ]
-        return Exchange(slots=slots)
+        return Exchange(slots=slots[: self.MAX_F2P_EXCHANGE_SLOTS] if self.is_f2p else slots)
 
     def get_inventory(self) -> Inventory:
         endpoint: str = "/inventory"

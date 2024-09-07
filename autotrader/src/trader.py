@@ -4,6 +4,11 @@ import time
 import types
 from typing import Dict, List, Optional, Set
 
+from core.clients.redis.models.trade_session.trade_session import TradeSession
+from core.clients.redis.redis_client import RedisClient
+from core.config.environment import Environment
+from core.logger import logger
+
 from clients.gds.gds_client import GdsClient
 from clients.gds.models.config.live_config import LiveConfig
 from clients.gds.models.exchange.exchange import Exchange
@@ -12,6 +17,7 @@ from clients.gds.models.inventory.inventory import Inventory
 from clients.gds.models.player.camera import Camera
 from clients.gds.models.player.player_location import PlayerLocation
 from clients.gds.models.player.player_state import PlayerState
+from clients.gds.models.session_metadata import SessionMetadata
 from clients.price.models.price_data_snapshot import PriceDataSnapshot
 from clients.price.price_client import PriceClient
 from exceptions import (
@@ -24,7 +30,6 @@ from interface.controller import Controller
 from models.order import BuyOrder, CancelOrder, InputOrder, OrderAction, SellOrder
 from strategy.strategy import BaseStrategy
 from strategy.strategy_factory import StrategyFactory
-from utils.logging import logger
 
 
 class Trader:
@@ -38,25 +43,40 @@ class Trader:
 
     def __init__(
         self,
-        f2p: bool,
+        env: Environment,
         autotrader_wait: float,
         controller: Controller,
+        redis_client: RedisClient,
         price_client: PriceClient,
         gds_client: GdsClient,
         strat_factory: StrategyFactory,
     ) -> None:
-        self.f2p: bool = f2p
+        self.env: Environment = env
         self.autotrader_wait: float = autotrader_wait
         self.controller: Controller = controller
+        self.redis_client: RedisClient = redis_client
         self.price_client: PriceClient = price_client
         self.gds_client: GdsClient = gds_client
         self.strat_factory: StrategyFactory = strat_factory
 
         self.autotrader_active: bool = True
         self.active_strats: Dict[str, BaseStrategy] = {}
+        self.calc_cycle: int = 0
+        self.trade_session: TradeSession = self.create_trade_session()
 
         signal.signal(signal.SIGINT, self.stop)
         signal.signal(signal.SIGTERM, self.stop)
+
+    def create_trade_session(self) -> TradeSession:
+        session: SessionMetadata = self.gds_client.get_session_metadata()
+        trade_session: TradeSession = TradeSession(
+            session_id=session.id,
+            start_time=session.start_time,
+            is_dev=self.env == Environment.DEV,
+            trades=[],
+        )
+        self.redis_client.set_trade_session(trade_session)
+        return trade_session
 
     def is_trading_enabled(self) -> bool:
         live_config: LiveConfig = self.gds_client.get_live_config()
@@ -101,7 +121,6 @@ class Trader:
                 strat = self.strat_factory.provide_strategy(
                     top_level_config=live_config.top_level_config,
                     strat_config=strat_config,
-                    f2p=self.f2p,
                 )
                 self.active_strats[strat_config.strat_name] = strat
             else:
@@ -145,8 +164,42 @@ class Trader:
 
         self.controller.click_location("ge_confirm")
 
+    def handle_order(self, action: OrderAction) -> None:
+        if isinstance(action, CancelOrder):
+            logger.info(f"Cancelling order in GE slot: {action.ge_slot}")
+            self.controller.click_ge_slot(action.ge_slot)
+            self.controller.click_location("ge_abort_offer")
+            self.controller.click_location("ge_back")
+        elif isinstance(action, InputOrder):
+            ge_slot: int = self.get_next_available_ge_slot()
+            if isinstance(action, BuyOrder):
+                self.controller.click_ge_slot(ge_slot)
+                self.controller.type(action.item_name)
+                self.controller.press("enter")
+            elif isinstance(action, SellOrder):
+                inv_slot: int = self.get_inv_slot(action.item_id)
+                self.controller.click_inventory_slot(inv_slot)
+            else:
+                raise UnsupportedOrderActionError(
+                    actual=type(action).__name__,
+                    expected=InputOrder.__name__,
+                )
+            order_msg: str = f"item {action.item_name}, price: {action.price}, quantity: {action.quantity}"
+            logger.info(f"Submitting {type(action).__name__} in GE slot {ge_slot} - {order_msg}")
+            self.input_order(action)
+        else:
+            raise UnsupportedOrderActionError(
+                actual=type(action).__name__,
+                expected=OrderAction.__name__,
+            )
+        self.controller.click_location("ge_collect")
+
+    def update_limit(self, action: OrderAction) -> None:
+        pass
+
     def process_actions(self, actions: List[OrderAction]) -> None:
         self.controller.open_ge()
+        self.controller.click_location("ge_collect")
 
         for action in actions:
             action_pause: float = random.uniform(self.MIN_ORDER_ACTION_PAUSE, self.MAX_ORDER_ACTION_PAUSE)
@@ -155,36 +208,13 @@ class Trader:
             if not self.autotrader_active:
                 raise Exception("Autotrader process terminated unexpectedly")
 
-            if isinstance(action, CancelOrder):
-                logger.info(f"Cancelling order in GE slot: {action.ge_slot}")
-                self.controller.click_ge_slot(action.ge_slot)
-                self.controller.click_location("ge_abort_offer")
-                self.controller.click_location("ge_back")
-            elif isinstance(action, InputOrder):
-                ge_slot: int = self.get_next_available_ge_slot()
-                if isinstance(action, BuyOrder):
-                    self.controller.click_ge_slot(ge_slot)
-                    self.controller.type(action.item_name)
-                    self.controller.press("enter")
-                elif isinstance(action, SellOrder):
-                    inv_slot: int = self.get_inv_slot(action.item_id)
-                    self.controller.click_inventory_slot(inv_slot)
-                else:
-                    raise UnsupportedOrderActionError(
-                        actual=type(action).__name__,
-                        expected=InputOrder.__name__,
-                    )
-                order_msg: str = f"item {action.item_name}, price: {action.price}, quantity: {action.quantity}"
-                logger.info(f"Submitting {type(action).__name__} in GE slot {ge_slot} - {order_msg}")
-                self.input_order(action)
-            else:
-                raise UnsupportedOrderActionError(
-                    actual=type(action).__name__,
-                    expected=OrderAction.__name__,
-                )
-            self.controller.click_location("ge_collect")
+            self.handle_order(action)
+            self.update_limit(action)
 
         self.controller.exit_ge()
+
+    def save_trades(self, actions: List[OrderAction], strat_name: str) -> None:
+        pass
 
     def wait(self, trading_enabled: bool, cur_time: float) -> None:
         if trading_enabled and self.active_strats:
@@ -211,6 +241,8 @@ class Trader:
                 logger.info("Preparing player at exchange")
                 self.prepare_player()
 
+            self.calc_cycle += 1
+
             logger.info("Fetching data snapshots required for strats")
             exchange: Exchange = self.gds_client.get_exchange()
             inventory: Inventory = self.gds_client.get_inventory()
@@ -234,7 +266,9 @@ class Trader:
 
                 logger.info(f"Processing order actions for strat: {strat.name}")
                 self.process_actions(actions)
-                # TODO: save trades, update state of world
+
+                logger.info(f"Saving trades for strategy {strat.name}")
+                self.save_trades(actions, strat.name)
 
             self.wait(trading_enabled, cur_time)
 

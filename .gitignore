@@ -1,9 +1,12 @@
 ## shared ##
 
-## autotrader ##
+## python services ##
 .env*
 .venv
 __pycache__
+
+## redis ##
+redis/store/*
 
 ## runelite ##
 # have git recursively ignore/unignore subdirs so that we only track the nested dirs containing relevant plugin code

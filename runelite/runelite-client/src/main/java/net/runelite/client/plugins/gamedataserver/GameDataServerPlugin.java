@@ -31,9 +31,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -58,8 +56,7 @@ public class GameDataServerPlugin extends Plugin {
 	private Gson gson;
 
 	@Provides
-	private GameDataServerConfig provideConfig(ConfigManager configManager)
-	{
+	private GameDataServerConfig provideConfig(ConfigManager configManager) {
 		return configManager.getConfig(GameDataServerConfig.class);
 	}
 
@@ -75,6 +72,8 @@ public class GameDataServerPlugin extends Plugin {
 		server = HttpServer.create(new InetSocketAddress(SERVER_PORT), 0);
 		server.createContext("/health", this::health);
 		server.createContext("/snapshot", this::serveGameDataSnapshot);
+		server.createContext("/session", this::serveSession);
+		server.createContext("/membership", this::serveMembershipStatus);
 		server.createContext("/exchange", this::serveExchangeData);
 		server.createContext("/inventory", this::serveInventoryData);
 		server.createContext("/player", this::servePlayerData);
@@ -84,8 +83,7 @@ public class GameDataServerPlugin extends Plugin {
 	}
 
 	@Override
-	protected void shutDown() throws Exception
-	{
+	protected void shutDown() throws Exception {
 		server.stop(0);
 	}
 
@@ -104,18 +102,33 @@ public class GameDataServerPlugin extends Plugin {
 				String.format("Client is running, but got unexpected game state: %s", state)
 			);
 		}
-		sendResponse(httpExchange, null);
+		Map<String, String> response = Map.of("status", "healthy");
+		sendResponse(httpExchange, response);
 	}
 
 	private void serveGameDataSnapshot(HttpExchange httpExchange) throws IOException {
 		log.info("Fetching game data snapshot");
 		GameDataSnapshot snapshot = GameDataSnapshot.builder()
+			.session(getSession())
+			.membershipStatus(getMembershipStatus())
 			.exchange(getExchangeData())
 			.inventory(getInventoryData())
 			.player(getPlayerData())
 			.creationTime(Instant.now())
 			.build();
 		sendResponse(httpExchange, snapshot);
+	}
+
+	private void serveSession(HttpExchange httpExchange) throws IOException {
+		log.info("Fetching session data");
+		Session session = getSession();
+		sendResponse(httpExchange, session);
+	}
+
+	private void serveMembershipStatus(HttpExchange httpExchange) throws IOException {
+		log.info("Fetching membership status");
+		MembershipStatus membershipStatus = getMembershipStatus();
+		sendResponse(httpExchange, membershipStatus);
 	}
 
 	private void serveExchangeData(HttpExchange httpExchange) throws IOException {
@@ -157,6 +170,19 @@ public class GameDataServerPlugin extends Plugin {
 			.stratConfigs(stratConfigs)
 			.build();
 		sendResponse(httpExchange, liveConfig);
+	}
+
+	private Session getSession() {
+		return Session.builder()
+			.id(UUID.randomUUID().toString().replace("-", ""))
+			.startTime(Instant.now().getEpochSecond())
+			.build();
+	}
+
+	private MembershipStatus getMembershipStatus() {
+		return MembershipStatus.builder()
+			.isF2p(client.getVarcIntValue(VarClientInt.MEMBERSHIP_STATUS) == 0)
+			.build();
 	}
 
 	private Exchange getExchangeData() {

@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": ".",
+			"name": "Root",
+		},
+		{
+			"path": "redis",
+			"name": "Redis",
+		},
+		{
+			"path": "core",
+			"name": "Core",
+		},
+		{
+			"path": "autotrader",
+			"name": "AutoTrader",
+		},
+		{
+			"path": "tdp",
+			"name": "TradeDataPlatform",
+		}
+	],
+}

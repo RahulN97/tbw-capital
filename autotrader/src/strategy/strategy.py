@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
+from core.clients.redis.redis_client import RedisClient
+
 from clients.gds.models.config.strat_config import StratConfig
 from clients.gds.models.config.top_level_config import TopLevelConfig
 from clients.gds.models.exchange.exchange import Exchange
@@ -18,19 +20,19 @@ class BaseStrategy(ABC):
 
     def __init__(
         self,
+        redis_client: RedisClient,
         top_level_config: TopLevelConfig,
         strat_config: StratConfig,
         universe: Optional[List[int]],
         item_map: Dict[int, ItemMetadata],
-        f2p: bool,
     ) -> None:
+        self.redis_client: RedisClient = redis_client
         self.top_level_config: TopLevelConfig = top_level_config
         self.strat_config: StratConfig = strat_config
         self.universe: Optional[List[int]] = universe
         self.item_map: Dict[int, ItemMetadata] = (
             item_map if universe is None else {id: meta for id, meta in item_map.items() if id in universe}
         )
-        self.f2p: bool = f2p
         self.next_run_time: float = 0.0
 
     @property
@@ -74,4 +76,5 @@ class BaseStrategy(ABC):
         return cancels + sells + buys[:remaining_slots]
 
     def validate_orders(self, orders: List[OrderAction]) -> None:
+        pass
         pass

@@ -1,0 +1,33 @@
+version: 1
+disable_existing_loggers: true
+formatters:
+  default:
+    format: "basil\t %(levelname)-8s %(message)s"
+  uvicorn:
+    "()": uvicorn.logging.DefaultFormatter
+    format: "uvicorn\t %(levelname)-8s %(message)s"
+  api:
+    "()": uvicorn.logging.AccessFormatter
+    format: "api\t %(levelname)-8s %(client_addr)s - '%(request_line)s' %(status_code)s"
+handlers:
+  default:
+    class: logging.StreamHandler
+    formatter: default
+    stream: ext://sys.stderr
+  uvicorn:
+    class: logging.StreamHandler
+    formatter: uvicorn
+    stream: ext://sys.stderr
+  api:
+    class: logging.StreamHandler
+    formatter: api
+    stream: ext://sys.stderr
+loggers:
+  "":
+    handlers: [default]
+  uvicorn.access:
+    handlers: [api]
+    propagate: false
+  uvicorn.error:
+    handlers: [uvicorn]
+    propagate: false

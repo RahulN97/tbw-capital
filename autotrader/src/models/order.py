@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from utils.abstract_dataclasses import AbstractDataclass
+from core.abstract_dataclasses import AbstractDataclass
 
 
 @dataclass

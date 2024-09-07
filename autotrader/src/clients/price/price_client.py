@@ -1,6 +1,7 @@
-from typing import Any, Dict, FrozenSet
+from functools import lru_cache
+from typing import Any, Dict, FrozenSet, List
 
-import requests
+from core.clients.base_client import BaseClient
 from requests import Response, Session
 
 from clients.price.exceptions import PriceApiError, UnsupportedPriceWindowError
@@ -10,16 +11,25 @@ from clients.price.models.price_data_snapshot import PriceDataSnapshot
 from clients.price.models.price_window import PriceWindow
 
 
-class PriceClient:
+class PriceClient(BaseClient):
 
     OSRS_WIKI_URL: str = "https://prices.runescape.wiki/api/v1/osrs"
     HEADERS: Dict[str, str] = {"User-Agent": "tbw-capital@gmail.com"}
 
     SUPPORTED_PRICE_WINDOWS: FrozenSet[PriceWindow] = frozenset((PriceWindow.AVG_5M, PriceWindow.AVG_1H))
 
+    MAX_INT: int = 2**31 - 1
+
     def __init__(self) -> None:
-        self.session: Session = requests.Session()
+        self.session: Session = Session()
         self.url: str = self.OSRS_WIKI_URL
+        super().__init__()
+
+    def establish_connection(self) -> None:
+        if not self.get_latest_prices():
+            raise PriceApiError("OSRS prices API is not returning any price data")
+        if not self.get_item_mapping():
+            raise PriceApiError("OSRS prices API is not returning any item metadata")
 
     def get(self, endpoint: str) -> Dict[str, Any]:
         resp: Response = self.session.get(url=self.url + endpoint, headers=self.HEADERS)
@@ -27,13 +37,15 @@ class PriceClient:
             raise PriceApiError(resp.text)
         return resp.json()
 
+    @lru_cache
     def get_item_mapping(self) -> Dict[int, ItemMetadata]:
-        data: Dict[str, Any] = self.get("/mapping")
+        data: List[Dict[str, Any]] = self.get("/mapping")
+
         return {
             d["id"]: ItemMetadata(
                 id=d["id"],
                 name=d["name"],
-                limit=d["limit"],
+                limit=d.get("limit", self.MAX_INT),
                 members=d["members"],
             )
             for d in data
