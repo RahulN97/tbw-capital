@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "core"
-version = "0.1.0"
+version = "0.2.0"
 description = "Shared library for python services in TBW Capital"
 authors = ["Rahul Nambiar <rahbiar@gmail.com>"]
 readme = "README.md"
@@ -8,11 +8,13 @@ packages = [
     { include = "*", from = "core", to = "core" },
     { include = "clients", from = "core", to = "core" },
     { include = "config", from = "core", to = "core" },
+    { include = "tracking", from = "core", to = "core" },
 ]
 
 [tool.poetry.dependencies]
 python = "^3.12"
 redis = "^5.0.8"
+requests = "^2.32.3"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -24,3 +26,27 @@ black = "^24.8.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+target-version = ['py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs         # exclude eggs
+  | \.git          # exclude git directory
+  | \.hg           # exclude hg directory
+  | \.mypy_cache   # exclude mypy cache
+  | \.tox          # exclude tox environment
+  | \.venv         # exclude virtual environments
+  | build          # exclude build directory
+  | dist           # exclude dist directory
+)/
+'''
+
+[tool.isort]
+lines_after_imports = 2
+line_length = 120
+force_grid_wrap = 6
+include_trailing_comma = true
+profile = "black"

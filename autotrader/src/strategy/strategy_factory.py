@@ -1,12 +1,11 @@
 import json
 from typing import Dict, List
 
+from core.clients.gds.models.config.strat_config import MMStratConfig, StratConfig
+from core.clients.gds.models.config.top_level_config import TopLevelConfig
 from core.clients.redis.redis_client import RedisClient
 
-from clients.gds.models.config.strat_config import MMStratConfig, StratConfig
-from clients.gds.models.config.top_level_config import TopLevelConfig
 from clients.price.models.item_metadata import ItemMetadata
-from clients.price.price_client import PriceClient
 from strategy.exceptions import UnsupportedStratError
 from strategy.mm import MMStrategy
 from strategy.strategy import BaseStrategy
@@ -14,9 +13,9 @@ from strategy.strategy import BaseStrategy
 
 class StrategyFactory:
 
-    def __init__(self, redis_client: RedisClient, price_client: PriceClient, is_f2p: bool) -> None:
+    def __init__(self, redis_client: RedisClient, item_map: Dict[int, ItemMetadata], is_f2p: bool) -> None:
         self.redis_client: RedisClient = redis_client
-        self.item_map: Dict[int, ItemMetadata] = price_client.get_item_mapping()
+        self.item_map: Dict[int, ItemMetadata] = item_map
         self.universe_map: Dict[str, List[int]] = self.get_universe_map(is_f2p)
 
     def get_universe_map(self, is_f2p: bool) -> Dict[str, List[int]]:
@@ -37,5 +36,4 @@ class StrategyFactory:
                 universe=self.universe_map.get(MMStrategy.__name__.lower()),
                 item_map=self.item_map.copy(),
             )
-        raise UnsupportedStratError(type(strat_config).__name__)
         raise UnsupportedStratError(type(strat_config).__name__)

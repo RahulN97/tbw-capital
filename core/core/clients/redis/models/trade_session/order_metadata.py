@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 
+from core.clients.redis.models.redis_object import RedisObject
+
 
 class OrderType(Enum):
 
@@ -18,7 +20,7 @@ class OrderType(Enum):
 
 
 @dataclass
-class OrderMetadata:
+class OrderMetadata(RedisObject):
     order_type: OrderType
     item_id: int
     price: int

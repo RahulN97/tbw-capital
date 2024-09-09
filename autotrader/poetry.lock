@@ -181,7 +181,7 @@ files = [
 
 [[package]]
 name = "core"
-version = "0.1.0"
+version = "0.2.0"
 description = "Shared library for python services in TBW Capital"
 optional = false
 python-versions = "^3.12"
@@ -190,6 +190,7 @@ develop = false
 
 [package.dependencies]
 redis = "^5.0.8"
+requests = "^2.32.3"
 
 [package.source]
 type = "directory"

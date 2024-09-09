@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
-from clients.gds.models.config.strat_config import StratConfig
-from clients.gds.models.config.top_level_config import TopLevelConfig
+from core.clients.gds.models.config.strat_config import StratConfig
+from core.clients.gds.models.config.top_level_config import TopLevelConfig
 
 
 @dataclass

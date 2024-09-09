@@ -1,4 +1,4 @@
-from clients.gds.models.player.player_state import PlayerState
+from core.clients.gds.models.player.player_state import PlayerState
 
 
 class UnexpectedPlayerStateError(Exception):

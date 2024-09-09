@@ -1,4 +1,4 @@
-from functools import lru_cache
+from functools import cached_property
 from typing import Any, Dict, FrozenSet, List
 
 from core.clients.base_client import BaseClient
@@ -25,22 +25,9 @@ class PriceClient(BaseClient):
         self.url: str = self.OSRS_WIKI_URL
         super().__init__()
 
-    def establish_connection(self) -> None:
-        if not self.get_latest_prices():
-            raise PriceApiError("OSRS prices API is not returning any price data")
-        if not self.get_item_mapping():
-            raise PriceApiError("OSRS prices API is not returning any item metadata")
-
-    def get(self, endpoint: str) -> Dict[str, Any]:
-        resp: Response = self.session.get(url=self.url + endpoint, headers=self.HEADERS)
-        if resp.status_code != 200:
-            raise PriceApiError(resp.text)
-        return resp.json()
-
-    @lru_cache
-    def get_item_mapping(self) -> Dict[int, ItemMetadata]:
+    @cached_property
+    def item_map(self) -> Dict[int, ItemMetadata]:
         data: List[Dict[str, Any]] = self.get("/mapping")
-
         return {
             d["id"]: ItemMetadata(
                 id=d["id"],
@@ -50,6 +37,18 @@ class PriceClient(BaseClient):
             )
             for d in data
         }
+
+    def establish_connection(self) -> None:
+        if not self.item_map:
+            raise PriceApiError("OSRS prices API is not returning any item metadata")
+        if not self.get_latest_prices():
+            raise PriceApiError("OSRS prices API is not returning any price data")
+
+    def get(self, endpoint: str) -> Dict[str, Any]:
+        resp: Response = self.session.get(url=self.url + endpoint, headers=self.HEADERS)
+        if resp.status_code != 200:
+            raise PriceApiError(resp.text)
+        return resp.json()
 
     def get_latest_prices(self) -> Dict[int, LatestPrice]:
         resp_data: Dict[str, Any] = self.get("/latest")

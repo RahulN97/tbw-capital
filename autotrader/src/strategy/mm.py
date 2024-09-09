@@ -1,11 +1,11 @@
 from typing import Dict, List, Optional
 
+from core.clients.gds.models.config.strat_config import MMStratConfig
+from core.clients.gds.models.config.top_level_config import TopLevelConfig
+from core.clients.gds.models.exchange.exchange import Exchange
+from core.clients.gds.models.inventory.inventory import Inventory
 from core.clients.redis.redis_client import RedisClient
 
-from clients.gds.models.config.strat_config import MMStratConfig
-from clients.gds.models.config.top_level_config import TopLevelConfig
-from clients.gds.models.exchange.exchange import Exchange
-from clients.gds.models.inventory.inventory import Inventory
 from clients.price.models.item_metadata import ItemMetadata
 from clients.price.models.price_data_snapshot import PriceDataSnapshot
 from models.order import BuyOrder, CancelOrder, OrderAction, SellOrder

@@ -1,22 +1,22 @@
 from functools import cached_property
 from typing import Any, Dict, List
 
-from core.clients.base_client import BaseClient
 from requests import Response, Session
 
-from clients.gds.exceptions import GdsApiError, GdsUnexpectedResponseError
-from clients.gds.models.config.live_config import LiveConfig
-from clients.gds.models.config.strat_config import MMStratConfig, StratConfig
-from clients.gds.models.config.top_level_config import TopLevelConfig
-from clients.gds.models.exchange.exchange import Exchange
-from clients.gds.models.exchange.exchange_slot import ExchangeSlot
-from clients.gds.models.exchange.exchange_slot_state import ExchangeSlotState
-from clients.gds.models.inventory.inventory import Inventory
-from clients.gds.models.inventory.item import Item
-from clients.gds.models.player.camera import Camera
-from clients.gds.models.player.player_location import PlayerLocation
-from clients.gds.models.player.player_state import PlayerState
-from clients.gds.models.session_metadata import SessionMetadata
+from core.clients.base_client import BaseClient
+from core.clients.gds.exceptions import GdsApiError, GdsUnexpectedResponseError
+from core.clients.gds.models.config.live_config import LiveConfig
+from core.clients.gds.models.config.strat_config import MMStratConfig, StratConfig
+from core.clients.gds.models.config.top_level_config import TopLevelConfig
+from core.clients.gds.models.exchange.exchange import Exchange
+from core.clients.gds.models.exchange.exchange_slot import ExchangeSlot
+from core.clients.gds.models.exchange.exchange_slot_state import ExchangeSlotState
+from core.clients.gds.models.inventory.inventory import Inventory
+from core.clients.gds.models.inventory.item import Item
+from core.clients.gds.models.player.camera import Camera
+from core.clients.gds.models.player.player_location import PlayerLocation
+from core.clients.gds.models.player.player_state import PlayerState
+from core.clients.gds.models.session_metadata import SessionMetadata
 
 
 class GdsClient(BaseClient):
@@ -26,12 +26,6 @@ class GdsClient(BaseClient):
     def __init__(self, gds_host: str, gds_port: int) -> None:
         self.session: Session = Session()
         self.url: str = f"http://{gds_host}:{gds_port}"
-
-    def get(self, endpoint: str) -> Dict[str, Any]:
-        resp: Response = self.session.get(url=self.url + endpoint)
-        if resp.status_code != 200:
-            raise GdsApiError(resp.text)
-        return resp.json()
 
     @cached_property
     def is_f2p(self) -> bool:
@@ -43,6 +37,12 @@ class GdsClient(BaseClient):
         data: Dict[str, Any] = self.session.get("/health")
         if data["health"] != "healthy":
             raise GdsApiError(f"RuneLite server health status: {data['health']}")
+
+    def get(self, endpoint: str) -> Dict[str, Any]:
+        resp: Response = self.session.get(url=self.url + endpoint)
+        if resp.status_code != 200:
+            raise GdsApiError(resp.text)
+        return resp.json()
 
     def get_session_metadata(self) -> SessionMetadata:
         endpoint: str = "/session"

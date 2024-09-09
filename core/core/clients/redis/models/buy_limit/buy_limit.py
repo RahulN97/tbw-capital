@@ -1,9 +1,12 @@
 from dataclasses import dataclass
+from typing import Optional
+
+from core.clients.redis.models.redis_object import RedisObject
 
 
 @dataclass
-class BuyLimit:
+class BuyLimit(RedisObject):
     item_id: int
     bought: int
     limit: int
-    reset_time: float
+    reset_time: Optional[float] = None
