@@ -7,10 +7,10 @@ from core.clients.gds.models.exchange.exchange import Exchange
 from core.clients.gds.models.exchange.exchange_slot import ExchangeSlot
 from core.clients.gds.models.exchange.exchange_slot_state import ExchangeSlotState
 from core.clients.gds.models.inventory.inventory import Inventory
+from core.clients.price.models.item_metadata import ItemMetadata
+from core.clients.price.models.price_data_snapshot import PriceDataSnapshot
 from core.clients.redis.redis_client import RedisClient
 
-from clients.price.models.item_metadata import ItemMetadata
-from clients.price.models.price_data_snapshot import PriceDataSnapshot
 from models.order import BuyOrder, CancelOrder, OrderAction, SellOrder
 from strategy.constants import GP_ITEM_ID
 from strategy.exceptions import MissingGpError

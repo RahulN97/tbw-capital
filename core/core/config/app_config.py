@@ -12,6 +12,10 @@ class AppConfig:
     def __init__(self) -> None:
         self.env: Environment = Environment.from_str(self.extract_env_var("ENV"))
         self.log_level: str = os.getenv("LOG_LEVEL", self.DEFAULT_LOG_LEVEL).upper()
+        self.redis_host: str = self.extract_env_var("REDIS_HOST")
+        self.redis_port: int = int(self.extract_env_var("REDIS_PORT"))
+        self.gds_host: str = self.extract_env_var("GDS_HOST")
+        self.gds_port: int = int(self.extract_env_var("GDS_PORT"))
 
     @staticmethod
     def raise_if_missing(val: Optional[str], var_name: str) -> str:

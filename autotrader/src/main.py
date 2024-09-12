@@ -1,11 +1,11 @@
 import time
 
 from core.clients.gds.gds_client import GdsClient
+from core.clients.price.price_client import PriceClient
 from core.clients.redis.redis_client import RedisClient
+from core.clients.tdp.tdp_client import TdpClient
 from core.logger import logger
-from core.tracking.book_keeper import BookKeeper
 
-from clients.price.price_client import PriceClient
 from config.autotrader_config import AutotraderConfig
 from executor import OrderExecutor
 from interface.controller import Controller
@@ -15,9 +15,10 @@ from trader import Trader
 
 
 def create_trader(config: AutotraderConfig) -> Trader:
-    redis_client: RedisClient = RedisClient()
+    redis_client: RedisClient = RedisClient(host=config.redis_host, port=config.redis_port)
     price_client: PriceClient = PriceClient()
-    gds_client: GdsClient = GdsClient(gds_host=config.gds_host, gds_port=config.gds_port)
+    gds_client: GdsClient = GdsClient(host=config.gds_host, port=config.gds_port)
+    tdp_client: TdpClient = TdpClient(host=config.tdp_host, port=config.tdp_port)
 
     locator: ScreenLocator = ScreenLocator(randomize=config.humanize)
     controller: Controller = Controller(locator=locator, randomize=config.humanize)
@@ -27,7 +28,6 @@ def create_trader(config: AutotraderConfig) -> Trader:
         item_map=price_client.item_map,
         is_f2p=gds_client.is_f2p,
     )
-    book_keeper: BookKeeper = BookKeeper(redis_client=redis_client, gds_client=gds_client)
 
     return Trader(
         env=config.env,
@@ -36,8 +36,8 @@ def create_trader(config: AutotraderConfig) -> Trader:
         order_executor=order_executor,
         price_client=price_client,
         gds_client=gds_client,
+        tdp_client=tdp_client,
         strat_factory=strat_factory,
-        book_keeper=book_keeper,
     )
 
 

@@ -1,14 +1,14 @@
 from functools import cached_property
 from typing import Any, Dict, FrozenSet, List
 
-from core.clients.base_client import BaseClient
 from requests import Response, Session
 
-from clients.price.exceptions import PriceApiError, UnsupportedPriceWindowError
-from clients.price.models.item_metadata import ItemMetadata
-from clients.price.models.price import AvgPrice, LatestPrice
-from clients.price.models.price_data_snapshot import PriceDataSnapshot
-from clients.price.models.price_window import PriceWindow
+from core.clients.base_client import BaseClient
+from core.clients.price.exceptions import PriceApiError, UnsupportedPriceWindowError
+from core.clients.price.models.item_metadata import ItemMetadata
+from core.clients.price.models.price import AvgPrice, LatestPrice
+from core.clients.price.models.price_data_snapshot import PriceDataSnapshot
+from core.clients.price.models.price_window import PriceWindow
 
 
 class PriceClient(BaseClient):

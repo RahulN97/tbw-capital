@@ -1,6 +1,6 @@
 from typing import FrozenSet
 
-from clients.price.models.price_window import PriceWindow
+from core.clients.price.models.price_window import PriceWindow
 
 
 class PriceApiError(Exception):

@@ -3,9 +3,9 @@ from typing import Dict, List
 
 from core.clients.gds.models.config.strat_config import MMStratConfig, StratConfig
 from core.clients.gds.models.config.top_level_config import TopLevelConfig
+from core.clients.price.models.item_metadata import ItemMetadata
 from core.clients.redis.redis_client import RedisClient
 
-from clients.price.models.item_metadata import ItemMetadata
 from strategy.exceptions import UnsupportedStratError
 from strategy.mm import MMStrategy
 from strategy.strategy import BaseStrategy

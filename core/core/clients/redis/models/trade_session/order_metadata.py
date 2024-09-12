@@ -1,15 +1,15 @@
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import Enum
 
-from core.clients.redis.models.redis_object import RedisObject
+from core.redis_object import RedisObject
 
 
 class OrderType(Enum):
 
-    NOT_SPECIFIED = auto()
-    CANCEL = auto()
-    BUY = auto()
-    SELL = auto()
+    NOT_SPECIFIED = "NOT_SPECIFIED"
+    CANCEL = "CANCEL"
+    BUY = "BUY"
+    SELL = "SELL"
 
     @classmethod
     def from_str(cls, order_type: str) -> "OrderType":

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict, List, Type
 
-from clients.price.models.price import AvgPrice, LatestPrice
+from core.clients.price.models.price import AvgPrice, LatestPrice
 
 
 @dataclass(frozen=True)

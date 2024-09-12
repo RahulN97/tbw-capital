@@ -1,13 +1,17 @@
 from collections import defaultdict
+from datetime import datetime
 from typing import Dict, List
 
 from core.clients.gds.gds_client import GdsClient
 from core.clients.gds.models.exchange.exchange import Exchange
 from core.clients.gds.models.exchange.exchange_slot_state import ExchangeSlotState
+from core.clients.redis.exceptions import RedisKeyError
 from core.clients.redis.models.buy_limit.buy_limit import BuyLimit
+from core.clients.redis.models.trade_session.trade import Trade
 from core.clients.redis.models.trade_session.trade_session import TradeSession
 from core.clients.redis.redis_client import RedisClient
-from core.tracking.slot_diff import SlotDiff
+
+from tracking.slot_diff import SlotDiff
 
 
 class BookKeeper:
@@ -17,7 +21,16 @@ class BookKeeper:
     def __init__(self, redis_client: RedisClient, gds_client: GdsClient) -> None:
         self.redis_client: RedisClient = redis_client
         self.gds_client: GdsClient = gds_client
-        self.prev_exchange: Exchange = gds_client.get_exchange()
+        self.prev_exchange: Exchange = self.load_prev_exchange()
+        self.update_limits(cur_time=datetime.now().timestamp())
+
+    def load_prev_exchange(self) -> Exchange:
+        try:
+            return self.redis_client.get_exchange_snapshot()
+        except RedisKeyError:
+            prev_exchange: Exchange = self.gds_client.get_exchange()
+            self.redis_client.set_exchange_snapshot(prev_exchange)
+            return prev_exchange
 
     def calc_slot_diffs(self, cur_exchange: Exchange) -> Dict[int, List[SlotDiff]]:
         item_diff_map: Dict[int, List[SlotDiff]] = defaultdict(list)
@@ -47,15 +60,16 @@ class BookKeeper:
                     if buy_limit.reset_time is None or buy_limit.reset_time < cur_time:
                         buy_limit.reset_time = cur_time + self.RESET_TIME_SECS
             else:
-                if buy_limit.reset_time < cur_time:
+                if buy_limit.reset_time is not None and buy_limit.reset_time < cur_time:
                     buy_limit.reset_time = None
                     buy_limit.bought = 0
 
         self.redis_client.set_all_buy_limits(buy_limits)
+        self.redis_client.set_exchange_snapshot(cur_exchange)
         self.prev_exchange: Exchange = cur_exchange
 
     def save_trade_session(self, session: TradeSession) -> None:
         self.redis_client.set_trade_session(session)
 
-    def save_trades(self, actions, strat_name: str) -> None:
-        pass
+    def save_trades(self, session_id: str, strat_name: str, trades: List[Trade]) -> None:
+        self.redis_client.append_trades(session_id=session_id, strat_name=strat_name, trades=trades)

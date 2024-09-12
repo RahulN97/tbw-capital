@@ -23,9 +23,9 @@ class GdsClient(BaseClient):
 
     MAX_F2P_EXCHANGE_SLOTS: int = 3
 
-    def __init__(self, gds_host: str, gds_port: int) -> None:
+    def __init__(self, host: str, port: int) -> None:
         self.session: Session = Session()
-        self.url: str = f"http://{gds_host}:{gds_port}"
+        self.url: str = f"http://{host}:{port}"
 
     @cached_property
     def is_f2p(self) -> bool:
@@ -34,7 +34,7 @@ class GdsClient(BaseClient):
         return data["isF2p"]
 
     def establish_connection(self) -> None:
-        data: Dict[str, Any] = self.session.get("/health")
+        data: Dict[str, Any] = self.get("/health")
         if data["health"] != "healthy":
             raise GdsApiError(f"RuneLite server health status: {data['health']}")
 

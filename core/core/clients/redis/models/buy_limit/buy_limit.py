@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from core.clients.redis.models.redis_object import RedisObject
+from core.redis_object import RedisObject
 
 
 @dataclass

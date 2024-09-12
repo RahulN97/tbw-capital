@@ -8,6 +8,7 @@ class TdpConfig(AppConfig):
 
     def __init__(self) -> None:
         super().__init__()
+        self.service_host: str = self.extract_env_var("SERVICE_HOST")
         self.service_port: int = int(self.extract_env_var("SERVICE_PORT"))
         self.num_workers: int = int(self.extract_env_var("NUM_WORKERS"))
 

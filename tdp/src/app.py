@@ -40,7 +40,7 @@ def start_server(app: ASGIApplication) -> None:
     app_target: ASGIApplication | str = "app:app" if reload or config.num_workers > 1 else app
     uvicorn.run(
         app_target,
-        host="localhost",
+        host=config.service_host,
         port=config.service_port,
         reload=reload,
         log_config=config.get_log_config(),

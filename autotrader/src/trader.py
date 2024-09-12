@@ -11,14 +11,14 @@ from core.clients.gds.models.player.camera import Camera
 from core.clients.gds.models.player.player_location import PlayerLocation
 from core.clients.gds.models.player.player_state import PlayerState
 from core.clients.gds.models.session_metadata import SessionMetadata
+from core.clients.price.models.item_metadata import ItemMetadata
+from core.clients.price.models.price_data_snapshot import PriceDataSnapshot
+from core.clients.price.price_client import PriceClient
 from core.clients.redis.models.trade_session.trade_session import TradeSession
+from core.clients.tdp.tdp_client import TdpClient
 from core.config.environment import Environment
 from core.logger import logger
-from core.tracking.book_keeper import BookKeeper
 
-from clients.price.models.item_metadata import ItemMetadata
-from clients.price.models.price_data_snapshot import PriceDataSnapshot
-from clients.price.price_client import PriceClient
 from exceptions import UnexpectedPlayerStateError
 from executor import OrderExecutor
 from interface.controller import Controller
@@ -42,8 +42,8 @@ class Trader:
         order_executor: OrderExecutor,
         price_client: PriceClient,
         gds_client: GdsClient,
+        tdp_client: TdpClient,
         strat_factory: StrategyFactory,
-        book_keeper: BookKeeper,
     ) -> None:
         self.env: Environment = env
         self.autotrader_wait: float = autotrader_wait
@@ -51,8 +51,8 @@ class Trader:
         self.order_executor: OrderExecutor = order_executor
         self.price_client: PriceClient = price_client
         self.gds_client: GdsClient = gds_client
+        self.tdp_client: TdpClient = tdp_client
         self.strat_factory: StrategyFactory = strat_factory
-        self.book_keeper: BookKeeper = book_keeper
 
         self._autotrader_active: bool = True
         self.active_strats: Dict[str, BaseStrategy] = {}
@@ -80,7 +80,7 @@ class Trader:
             is_dev=self.env == Environment.DEV,
             trades=[],
         )
-        self.book_keeper.save_trade_session(trade_session)
+        self.tdp_client.save_trade_session(trade_session)
         return trade_session
 
     def is_trading_enabled(self) -> bool:
@@ -177,7 +177,7 @@ class Trader:
             price_data: PriceDataSnapshot = self.price_client.get_price_data_snapshot()
 
             logger.info("Refreshing buy limits")
-            self.book_keeper.update_limits(cur_time)
+            self.tdp_client.update_limits(cur_time)
 
             logger.info("Preparing strategies")
             strats_to_compute: List[BaseStrategy] = self.prepare_strats(cur_time)
@@ -199,7 +199,7 @@ class Trader:
                 self.order_executor.execute(actions)
 
                 logger.info(f"Saving trades for strategy {strat.name}")
-                self.book_keeper.save_trades(actions, strat.name)
+                self.tdp_client.save_trades(actions, strat.name)
 
             self.wait(trading_enabled, cur_time)
 

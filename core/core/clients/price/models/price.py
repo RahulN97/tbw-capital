@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 
 from core.abstract_dataclasses import AbstractDataclass
-
-from clients.price.models.price_window import PriceWindow
+from core.clients.price.models.price_window import PriceWindow
 
 
 @dataclass
