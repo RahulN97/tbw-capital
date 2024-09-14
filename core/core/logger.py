@@ -1,5 +1,6 @@
 import logging
 from logging import Formatter, Logger, StreamHandler
+from typing import Optional
 
 
 class CoreLogger:
@@ -40,8 +41,8 @@ class CoreLogger:
     def info(self, line: str) -> None:
         self.logger.info(line)
 
-    def error(self, line: str) -> None:
-        self.logger.error(line)
+    def error(self, line: str, exc_info: Optional[str] = None) -> None:
+        self.logger.error(line, exc_info=exc_info)
 
 
 logger: CoreLogger = CoreLogger()

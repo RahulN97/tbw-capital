@@ -14,6 +14,7 @@ from core.clients.gds.models.session_metadata import SessionMetadata
 from core.clients.price.models.item_metadata import ItemMetadata
 from core.clients.price.models.price_data_snapshot import PriceDataSnapshot
 from core.clients.price.price_client import PriceClient
+from core.clients.redis.models.trade_session.order import Order
 from core.clients.redis.models.trade_session.trade_session import TradeSession
 from core.clients.tdp.tdp_client import TdpClient
 from core.config.environment import Environment
@@ -77,8 +78,10 @@ class Trader:
         trade_session: TradeSession = TradeSession(
             session_id=session.id,
             start_time=session.start_time,
-            is_dev=self.env == Environment.DEV,
-            trades=[],
+            start_nw=0,  # tdp_client.get_nw()
+            env=self.env,
+            orders={},
+            trades={},
         )
         self.tdp_client.save_trade_session(trade_session)
         return trade_session
@@ -196,10 +199,15 @@ class Trader:
                 )
 
                 logger.info(f"Processing order actions for strat: {strat.name}")
-                self.order_executor.execute(actions)
+                orders: List[Order] = self.order_executor.execute(
+                    actions=actions,
+                    calc_cycle=self.calc_cycle,
+                    strat_name=strat.name,
+                    cur_time=cur_time,
+                )
 
-                logger.info(f"Saving trades for strategy {strat.name}")
-                self.tdp_client.save_trades(actions, strat.name)
+                logger.info(f"Saving orders for strategy {strat.name}")
+                self.tdp_client.save_orders(session_id=self.trade_session.session_id, orders=orders)
 
             self.wait(trading_enabled, cur_time)
 

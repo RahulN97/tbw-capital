@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "core"
-version = "0.5.0"
+version = "0.6.0"
 description = "Shared library for python services in TBW Capital"
 authors = ["Rahul Nambiar <rahbiar@gmail.com>"]
 readme = "README.md"
@@ -14,6 +14,7 @@ packages = [
 python = "^3.12"
 redis = "^5.0.8"
 requests = "^2.32.3"
+pydantic = "^2.9.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -48,4 +49,5 @@ lines_after_imports = 2
 line_length = 120
 force_grid_wrap = 6
 include_trailing_comma = true
+combine_as_imports = true
 profile = "black"

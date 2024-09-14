@@ -77,4 +77,3 @@ class BaseStrategy(ABC):
 
     def validate_orders(self, orders: List[OrderAction]) -> None:
         pass
-        pass

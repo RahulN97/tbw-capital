@@ -10,7 +10,7 @@ class ExchangeSlotState(Enum):
     BOUGHT = auto()
     CANCELLED_SELL = auto()
     SELLING = auto()
-    SOLD = auto
+    SOLD = auto()
 
     @classmethod
     def from_str(cls, state: str) -> "ExchangeSlotState":

@@ -5,8 +5,9 @@ from core.redis_object import RedisObject
 
 
 @dataclass
-class Trade(RedisObject):
+class Order(RedisObject):
     calc_cycle: int
     strat_name: str
+    ge_slot: int
     metadata: OfferMetadata
     time: float

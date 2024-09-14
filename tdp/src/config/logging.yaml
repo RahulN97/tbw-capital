@@ -2,7 +2,7 @@ version: 1
 disable_existing_loggers: true
 formatters:
   default:
-    format: "basil\t %(levelname)-8s %(message)s"
+    format: "tdp\t %(levelname)-8s %(message)s"
   uvicorn:
     "()": uvicorn.logging.DefaultFormatter
     format: "uvicorn\t %(levelname)-8s %(message)s"

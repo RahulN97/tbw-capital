@@ -1,12 +1,12 @@
 from datetime import datetime
-from typing import List
+from typing import Dict
 
 from core.clients.gds.models.exchange.exchange import Exchange
 from core.clients.gds.models.exchange.exchange_slot_state import ExchangeSlotState
 from core.clients.gds.models.inventory.inventory import Inventory
 from core.clients.redis.models.buy_limit.buy_limit import BuyLimit
 from core.clients.tdp.models.item_container import ItemContainer
-from core.clients.tdp.stubs.buy_limit import GetBuyLimitsRequest, GetBuyLimitsResponse, UpdateBuyLimitsRequest
+from core.clients.tdp.stubs.limits import GetBuyLimitsRequest, GetBuyLimitsResponse, UpdateBuyLimitsRequest
 from core.logger import logger
 from fastapi import APIRouter, Body, HTTPException
 from starlette.status import HTTP_400_BAD_REQUEST
@@ -27,18 +27,21 @@ async def get_buy_limits(
     request: GetBuyLimitsRequest = Body(...),
 ) -> GetBuyLimitsResponse:
     logger.info(f"Attempting to fetch buy limits in container: {request.container.name}")
+    buy_limits: Dict[int, BuyLimit] = {}
     if request.container == ItemContainer.EXCHANGE:
         exchange: Exchange = gds_client.get_exchange()
-        buy_limits: List[BuyLimit] = [
-            redis_client.get_buy_limit(slot.item_id) for slot in exchange.slots if slot.state != ExchangeSlotState.EMPTY
-        ]
+        for slot in exchange.slots:
+            if slot.state == ExchangeSlotState.EMPTY or slot.item_id in buy_limits:
+                continue
+            buy_limits[slot.item_id] = redis_client.get_buy_limit(slot.item_id)
     elif request.container == ItemContainer.INVENTORY:
         inv: Inventory = gds_client.get_inventory()
-        buy_limits: List[BuyLimit] = [
-            redis_client.get_buy_limit(item.id) for item in inv.items if item.id != GP_ITEM_ID
-        ]
+        for item in inv.items:
+            if item.id == GP_ITEM_ID or item.id in buy_limits:
+                continue
+            buy_limits[item.id] = redis_client.get_buy_limit(item.id)
     elif request.container == ItemContainer.ALL:
-        buy_limits: List[BuyLimit] = list(redis_client.get_all_buy_limits())
+        buy_limits: Dict[int, BuyLimit] = redis_client.get_all_buy_limits()
     else:
         raise HTTPException(
             status_code=HTTP_400_BAD_REQUEST,
@@ -46,7 +49,7 @@ async def get_buy_limits(
         )
 
     if request.item_ids is not None:
-        buy_limits: List[BuyLimit] = [bl for bl in buy_limits if bl.item_id in request.item_ids]
+        buy_limits: Dict[int, BuyLimit] = {id: bl for id, bl in buy_limits.items() if id in request.item_ids}
 
     return GetBuyLimitsResponse(buy_limits=buy_limits)
 

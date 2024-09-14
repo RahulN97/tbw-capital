@@ -6,6 +6,7 @@ from core.clients.base_client import BaseClient
 from core.clients.gds.models.exchange.exchange import Exchange
 from core.clients.redis.exceptions import RedisKeyError
 from core.clients.redis.models.buy_limit.buy_limit import BuyLimit
+from core.clients.redis.models.trade_session.order import Order
 from core.clients.redis.models.trade_session.trade import Trade
 from core.clients.redis.models.trade_session.trade_session import TradeSession
 
@@ -64,13 +65,26 @@ class RedisClient(BaseClient):
     def set_trade_session(self, trade_session: TradeSession) -> None:
         self.trades_client.set(name=trade_session.session_id, value=trade_session.serialize())
 
+    def get_orders(self, session_id: str) -> Dict[str, List[Order]]:
+        trade_session: TradeSession = self.get_trade_session(session_id=session_id)
+        return trade_session.orders
+
+    def append_orders(self, session_id: str, orders: Dict[str, List[Order]]) -> None:
+        trade_session: TradeSession = self.get_trade_session(session_id=session_id)
+        for strat_name, strat_orders in orders.items():
+            if strat_name not in trade_session.orders:
+                trade_session.orders[strat_name] = []
+            trade_session.orders[strat_name].extend(strat_orders)
+        self.set_trade_session(trade_session=trade_session)
+
     def get_trades(self, session_id: str) -> Dict[str, List[Trade]]:
         trade_session: TradeSession = self.get_trade_session(session_id=session_id)
         return trade_session.trades
 
-    def append_trades(self, session_id: str, strat_name: str, trades: List[Trade]) -> None:
+    def append_trades(self, session_id: str, trades: Dict[str, List[Trade]]) -> None:
         trade_session: TradeSession = self.get_trade_session(session_id=session_id)
-        if strat_name not in trade_session.trades:
-            trade_session.trades[strat_name] = []
-        trade_session.trades[strat_name].extend(trades)
+        for strat_name, strat_trades in trades.items():
+            if strat_name not in trade_session.trades:
+                trade_session.trades[strat_name] = []
+            trade_session.trades[strat_name].extend(strat_trades)
         self.set_trade_session(trade_session=trade_session)

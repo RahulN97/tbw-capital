@@ -1,17 +1,15 @@
-from enum import Enum, auto
+from enum import Enum
 
 
 class Environment(Enum):
 
-    NOT_SPECIFIED = auto()
-    DEV = auto()
-    PROD = auto()
+    NOT_SPECIFIED = "NOT_SPECIFIED"
+    DEV = "DEV"
+    PROD = "PROD"
 
     @classmethod
-    def from_str(cls, env: str) -> "Environment":
-        env: str = env.lower()
-        if env == "dev":
-            return cls.DEV
-        if env == "prod":
-            return cls.PROD
-        return cls.NOT_SPECIFIED
+    def from_str(cls, container: str) -> "Environment":
+        try:
+            return cls[container.upper()]
+        except KeyError:
+            return cls.NOT_SPECIFIED
