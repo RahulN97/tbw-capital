@@ -20,7 +20,7 @@ public interface GameDataServerConfig extends Config {
 		position = 1
 	)
 	String topLevelSection = "Top Level";
-	
+
 	@ConfigSection(
 		name = "Market Maker",
 		description = "Configs for market maker strategy",
