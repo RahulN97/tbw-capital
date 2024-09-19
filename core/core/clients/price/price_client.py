@@ -55,7 +55,7 @@ class PriceClient(BaseClient):
         data: Dict[int, Dict[str, int]] = resp_data["data"]
 
         return {
-            item_id: LatestPrice(
+            int(item_id): LatestPrice(
                 low_price=price_data["low"],
                 high_price=price_data["high"],
                 low_time=price_data["lowTime"],
@@ -76,7 +76,7 @@ class PriceClient(BaseClient):
         data: Dict[int, Dict[str, int]] = resp_data["data"]
 
         return {
-            item_id: AvgPrice(
+            int(item_id): AvgPrice(
                 low_price=price_data["avgLowPrice"],
                 high_price=price_data["avgHighPrice"],
                 low_volume=price_data["lowPriceVolume"],

@@ -1,8 +1,7 @@
 import signal
 import time
 import types
-from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, List, Optional
 
 from core.clients.gds.gds_client import GdsClient
 from core.clients.gds.models.config.live_config import LiveConfig
@@ -11,7 +10,6 @@ from core.clients.gds.models.inventory.inventory import Inventory
 from core.clients.gds.models.session_metadata import SessionMetadata
 from core.clients.price.models.price_data_snapshot import PriceDataSnapshot
 from core.clients.price.price_client import PriceClient
-from core.clients.redis.models.trade_session.start_metadata import StartMetadata
 from core.clients.redis.models.trade_session.trade_session import TradeSession
 from core.clients.redis.redis_client import RedisClient
 from core.clients.tdp.tdp_client import TdpClient

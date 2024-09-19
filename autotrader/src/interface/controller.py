@@ -126,3 +126,4 @@ class Controller:
 
     def exit_ge(self) -> None:
         self.press("esc")
+        self.press("esc")

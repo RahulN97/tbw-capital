@@ -154,9 +154,10 @@ class MetricsCalculator:
 
         nw: int = 0
         for item in inv.items:
-            if item.id not in prices:
-                continue
-            nw += item.quantity * prices[item.id].low_price
+            if item.id == GP_ITEM_ID:
+                nw += item.quantity
+            elif item.id in prices:
+                nw += item.quantity * prices[item.id].low_price
 
         for slot in exchange.slots:
             if slot.state == ExchangeSlotState.EMPTY:
