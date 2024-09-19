@@ -6,8 +6,8 @@ from core.redis_object import RedisObject
 
 @dataclass
 class Order(RedisObject):
+    id: str
     calc_cycle: int
     strat_name: str
-    ge_slot: int
     metadata: OfferMetadata
     time: float

@@ -9,9 +9,10 @@ from core.clients.gds.models.exchange.exchange_slot_state import ExchangeSlotSta
 from core.clients.gds.models.inventory.inventory import Inventory
 from core.clients.price.models.item_metadata import ItemMetadata
 from core.clients.price.models.price_data_snapshot import PriceDataSnapshot
+from core.clients.redis.models.trade_session.order import Order
 from core.clients.redis.redis_client import RedisClient
 
-from models.order import BuyOrder, CancelOrder, OrderAction, SellOrder
+from strategy.action import BuyAction, CancelOrderAction, OrderAction, SellAction
 from strategy.constants import GP_ITEM_ID
 from strategy.exceptions import MissingGpError
 
@@ -50,6 +51,9 @@ class BaseStrategy(ABC):
     ) -> List[OrderAction]:
         pass
 
+    def generate_actions(self) -> List[Order]:
+        pass
+
     @staticmethod
     def get_gp(inventory: Inventory) -> int:
         for item in inventory.items:
@@ -60,9 +64,9 @@ class BaseStrategy(ABC):
     def extract_executable_orders(
         self,
         exchange: Exchange,
-        cancels: List[CancelOrder],
-        sells: List[SellOrder],
-        buys: List[BuyOrder],
+        cancels: List[CancelOrderAction],
+        sells: List[SellAction],
+        buys: List[BuyAction],
     ) -> List[OrderAction]:
         available_slots: List[ExchangeSlot] = [s for s in exchange.slots if s.state == ExchangeSlotState.EMPTY]
         remaining_slots: int = len(available_slots) + len(cancels)

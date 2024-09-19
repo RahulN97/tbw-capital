@@ -27,27 +27,27 @@ class GdsClient(BaseClient):
         self.session: Session = Session()
         self.url: str = f"http://{host}:{port}"
 
-    @cached_property
-    def is_f2p(self) -> bool:
-        endpoint: str = "/membership"
-        data: Dict[str, bool] = self.get(endpoint)
-        return data["isF2p"]
-
     def establish_connection(self) -> None:
         data: Dict[str, Any] = self.get("/health")
         if data["health"] != "healthy":
             raise GdsApiError(f"RuneLite server health status: {data['health']}")
+
+    @cached_property
+    def session_metadata(self) -> SessionMetadata:
+        endpoint: str = "/session"
+        data: Dict[str, Any] = self.get(endpoint)
+        return SessionMetadata(
+            id=data["id"],
+            start_time=data["startTime"],
+            player_name=data["playerName"],
+            is_f2p=data["isF2p"],
+        )
 
     def get(self, endpoint: str) -> Dict[str, Any]:
         resp: Response = self.session.get(url=self.url + endpoint)
         if resp.status_code != 200:
             raise GdsApiError(resp.text)
         return resp.json()
-
-    def get_session_metadata(self) -> SessionMetadata:
-        endpoint: str = "/session"
-        data: Dict[str, Any] = self.get(endpoint)
-        return SessionMetadata(id=data["id"], start_time=data["startTime"])
 
     def get_live_config(self) -> LiveConfig:
         endpoint: str = "/config"
@@ -93,7 +93,7 @@ class GdsClient(BaseClient):
             )
             for slot in data["slots"]
         ]
-        return Exchange(slots=slots[: self.MAX_F2P_EXCHANGE_SLOTS] if self.is_f2p else slots)
+        return Exchange(slots=slots[: self.MAX_F2P_EXCHANGE_SLOTS] if self.session_metadata.is_f2p else slots)
 
     def get_inventory(self) -> Inventory:
         endpoint: str = "/inventory"
@@ -123,4 +123,4 @@ class GdsClient(BaseClient):
         location_data: Dict[str, int] = data["location"]
         location: PlayerLocation = PlayerLocation(x=location_data["x"], y=location_data["y"])
 
-        return PlayerState(camera=camera, location=location)
+        return PlayerState(logged_in=data["loggedIn"], camera=camera, location=location)

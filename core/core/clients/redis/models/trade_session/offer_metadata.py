@@ -10,3 +10,4 @@ class OfferMetadata(RedisObject):
     item_id: int
     price: int
     quantity: int
+    ge_slot: int

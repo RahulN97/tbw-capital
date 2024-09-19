@@ -8,7 +8,14 @@ from core.clients.price.models.item_metadata import ItemMetadata
 from core.clients.price.models.price_data_snapshot import PriceDataSnapshot
 from core.clients.redis.redis_client import RedisClient
 
-from models.order import BuyOrder, CancelOrder, OrderAction, SellOrder
+from strategy.action import (
+    BuyAction,
+    CancelBuyAction,
+    CancelOrderAction,
+    CancelSellAction,
+    OrderAction,
+    SellAction,
+)
 from strategy.strategy import BaseStrategy
 
 
@@ -16,10 +23,10 @@ from strategy.strategy import BaseStrategy
 # item_id: int = 561
 # item_name: str = self.item_map[item_id]
 # return [
-#     BuyOrder(item_id=item_id, item_name=item_name, price=150, quantity=10),
-#     SellOrder(item_id=item_id, item_name=item_name, price=160, quantity=5),
-#     CancelOrder(ge_slot=0),
-#     SellOrder(item_id=item_id, item_name=item_name, price=100, quantity=10),
+#     BuyAction(item_id=item_id, item_name=item_name, price=150, quantity=10),
+#     SellAction(item_id=item_id, item_name=item_name, price=160, quantity=5),
+#     CancelSellAction(ge_slot=0),
+#     SellAction(item_id=item_id, item_name=item_name, price=100, quantity=10),
 # ]
 
 
@@ -49,15 +56,15 @@ class MMStrategy(BaseStrategy):
     def is_over_buy_limit(self, item_id: int) -> bool:
         pass
 
-    def generate_cancel_orders(self, exchange: Exchange) -> List[CancelOrder]:
-        orders: List[CancelOrder] = []
+    def generate_cancel_orders(self, exchange: Exchange) -> List[CancelOrderAction]:
+        orders: List[CancelOrderAction] = []
         for slot in exchange.slots:
             # TODO: determine if slot needs to be cancelled
             pass
         return orders
 
-    def generate_sell_orders(self, inventory: Inventory, price_data: PriceDataSnapshot) -> List[SellOrder]:
-        orders: List[SellOrder] = []
+    def generate_sell_orders(self, inventory: Inventory, price_data: PriceDataSnapshot) -> List[SellAction]:
+        orders: List[SellAction] = []
         for item in inventory.items:
             if item.id not in self.universe:
                 continue
@@ -66,7 +73,7 @@ class MMStrategy(BaseStrategy):
             price: int = 0
 
             orders.append(
-                SellOrder(
+                SellAction(
                     item_id=item.id,
                     item_name=self.item_map[item.id].name,
                     price=price,
@@ -75,8 +82,8 @@ class MMStrategy(BaseStrategy):
             )
         return orders
 
-    def generate_buy_orders(self, inventory: Inventory, price_data: PriceDataSnapshot) -> List[BuyOrder]:
-        orders: List[BuyOrder] = []
+    def generate_buy_orders(self, inventory: Inventory, price_data: PriceDataSnapshot) -> List[BuyAction]:
+        orders: List[BuyAction] = []
         for item_id in self.universe:
             if self.is_over_buy_limit(item_id):
                 continue
@@ -90,7 +97,7 @@ class MMStrategy(BaseStrategy):
                 continue
 
             orders.append(
-                BuyOrder(
+                BuyAction(
                     item_id=item_id,
                     item_name=self.item_map[item_id].name,
                     price=price,
@@ -106,9 +113,9 @@ class MMStrategy(BaseStrategy):
         inventory: Inventory,
         price_data: PriceDataSnapshot,
     ) -> List[OrderAction]:
-        cancels: List[CancelOrder] = self.generate_cancel_orders(exchange=exchange)
-        sells: List[SellOrder] = self.generate_sell_orders(inventory=inventory, price_data=price_data)
-        buys: List[BuyOrder] = self.generate_buy_orders(inventory=inventory, price_data=price_data)
+        cancels: List[CancelOrderAction] = self.generate_cancel_orders(exchange=exchange)
+        sells: List[SellAction] = self.generate_sell_orders(inventory=inventory, price_data=price_data)
+        buys: List[BuyAction] = self.generate_buy_orders(inventory=inventory, price_data=price_data)
 
         orders: List[OrderAction] = self.extract_executable_orders(
             exchange=exchange,
@@ -117,5 +124,4 @@ class MMStrategy(BaseStrategy):
             buys=buys,
         )
         self.validate_orders(orders)
-        return orders
         return orders

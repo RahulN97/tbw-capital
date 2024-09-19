@@ -9,19 +9,20 @@ from core.clients.redis.redis_client import RedisClient
 
 
 MAX_INT: int = 2**31 - 1
+REDIS_HOST: str = "localhost"
+REDIS_PORT: int = 6379
+REDIS_DB: int = 1
 
 
 @dataclass(frozen=True)
 class ProgramArgs:
-    redis_host: str
-    redis_port: int
+    player_name: str
     item_ids: Optional[Set[int]] = None
 
 
 def get_program_args() -> ProgramArgs:
     parser: ArgumentParser = ArgumentParser(description="Script that loads buy limits into redis")
-    parser.add_argument("--redis-host", type=str, required=True, help="Redis server host")
-    parser.add_argument("--redis-port", type=int, required=True, help="Redis server port")
+    parser.add_argument("--player-name", type=str, required=True, help="Player name")
     parser.add_argument(
         "--item-ids",
         type=lambda v: set(int(x) for x in v.split(",")),
@@ -51,8 +52,8 @@ def main() -> None:
 
     buy_limits: Dict[int, BuyLimit] = create_buy_limits(args.item_ids)
 
-    redis_client: RedisClient = RedisClient(host=args.redis_host, port=args.redis_port)
-    redis_client.set_all_buy_limits(buy_limits)
+    redis_client: RedisClient = RedisClient(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
+    redis_client.set_all_buy_limits(player_name=args.player_name, buy_limits=buy_limits)
 
 
 if __name__ == "__main__":

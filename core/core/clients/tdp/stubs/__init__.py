@@ -2,8 +2,12 @@ from typing import Dict
 
 from core.clients.service import HttpMethod, ServiceCall
 from core.clients.tdp.stubs.limits import GetBuyLimitsRequest, GetBuyLimitsResponse, UpdateBuyLimitsRequest
+from core.clients.tdp.stubs.metrics import GetNetWorthRequest, GetNetWorthResponse, GetPnlRequest, GetPnlResponse
 from core.clients.tdp.stubs.session import (
     CreateTradeSessionRequest,
+    CreateTradeSessionResponse,
+    CreateTradesRequest,
+    CreateTradesResponse,
     GetOrdersRequest,
     GetOrdersResponse,
     GetTradeSessionRequest,
@@ -11,8 +15,7 @@ from core.clients.tdp.stubs.session import (
     GetTradesRequest,
     GetTradesResponse,
     UpdateOrdersRequest,
-    UpdateTradesRequest,
-    UpdateTradesResponse,
+    UpdateTradeSessionRequest,
 )
 
 
@@ -39,6 +42,12 @@ SERVICE_DEFINITIONS: Dict[str, ServiceCall] = {
         endpoint="/session",
         http_method=HttpMethod.POST,
         request_type=CreateTradeSessionRequest,
+        response_type=CreateTradeSessionResponse,
+    ),
+    "UpdateTradeSession": ServiceCall(
+        endpoint="/session",
+        http_method=HttpMethod.PUT,
+        request_type=UpdateTradeSessionRequest,
         response_type=None,
     ),
     "GetOrders": ServiceCall(
@@ -59,10 +68,22 @@ SERVICE_DEFINITIONS: Dict[str, ServiceCall] = {
         request_type=GetTradesRequest,
         response_type=GetTradesResponse,
     ),
-    "UpdateTrades": ServiceCall(
+    "CreateTrades": ServiceCall(
         endpoint="/session/trades",
         http_method=HttpMethod.POST,
-        request_type=UpdateTradesRequest,
-        response_type=UpdateTradesResponse,
+        request_type=CreateTradesRequest,
+        response_type=CreateTradesResponse,
+    ),
+    "GetPnl": ServiceCall(
+        endpoint="/metrics/pnl",
+        http_method=HttpMethod.GET,
+        request_type=GetPnlRequest,
+        response_type=GetPnlResponse,
+    ),
+    "GetNetWorth": ServiceCall(
+        endpoint="/metrics/nw",
+        http_method=HttpMethod.GET,
+        request_type=GetNetWorthRequest,
+        response_type=GetNetWorthResponse,
     ),
 }

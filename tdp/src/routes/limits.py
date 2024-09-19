@@ -11,9 +11,9 @@ from core.logger import logger
 from fastapi import APIRouter, Body, HTTPException
 from starlette.status import HTTP_400_BAD_REQUEST
 
+from constants import GP_ITEM_ID
 from dependencies import BookKeeperDep, GdsClientDep, RedisClientDep
 from routes.common import handle_exceptions
-from routes.constants import GP_ITEM_ID
 
 
 router: APIRouter = APIRouter()
@@ -33,15 +33,15 @@ async def get_buy_limits(
         for slot in exchange.slots:
             if slot.state == ExchangeSlotState.EMPTY or slot.item_id in buy_limits:
                 continue
-            buy_limits[slot.item_id] = redis_client.get_buy_limit(slot.item_id)
+            buy_limits[slot.item_id] = redis_client.get_buy_limit(player_name=request.player_name, item_id=slot.item_id)
     elif request.container == ItemContainer.INVENTORY:
         inv: Inventory = gds_client.get_inventory()
         for item in inv.items:
             if item.id == GP_ITEM_ID or item.id in buy_limits:
                 continue
-            buy_limits[item.id] = redis_client.get_buy_limit(item.id)
+            buy_limits[item.id] = redis_client.get_buy_limit(player_name=request.player_name, item_id=item.id)
     elif request.container == ItemContainer.ALL:
-        buy_limits: Dict[int, BuyLimit] = redis_client.get_all_buy_limits()
+        buy_limits: Dict[int, BuyLimit] = redis_client.get_all_buy_limits(player_name=request.player_name)
     else:
         raise HTTPException(
             status_code=HTTP_400_BAD_REQUEST,
@@ -59,4 +59,4 @@ async def get_buy_limits(
 async def update_buy_limits(book_keeper: BookKeeperDep, request: UpdateBuyLimitsRequest) -> None:
     update_time: float = request.time or datetime.now().timestamp()
     logger.info(f"Updating buy limits at time {update_time}")
-    book_keeper.update_limits(cur_time=update_time)
+    book_keeper.update_limits(player_name=request.player_name, cur_time=update_time)

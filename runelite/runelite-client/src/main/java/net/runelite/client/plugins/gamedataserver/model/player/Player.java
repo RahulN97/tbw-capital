@@ -6,6 +6,7 @@ import lombok.Data;
 @Builder
 @Data
 public class Player {
+	private boolean loggedIn;
 	private Location location;
 	private Camera camera;
 }

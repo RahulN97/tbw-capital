@@ -11,6 +11,7 @@ from interface.exceptions import UnexpectedPlayerStateError
 class Player:
 
     EXPECTED_PLAYER_STATE: PlayerState = PlayerState(
+        logged_in=True,
         camera=Camera(z=-878, yaw=0, scale=3600),
         location=PlayerLocation(x=3165, y=3487),
     )
@@ -23,7 +24,8 @@ class Player:
     def _is_player_ready(self) -> bool:
         player_state: PlayerState = self.gds_client.get_player_data()
         return (
-            player_state.location == self.EXPECTED_PLAYER_STATE.location
+            player_state.logged_in == self.EXPECTED_PLAYER_STATE.logged_in
+            and player_state.location == self.EXPECTED_PLAYER_STATE.location
             and player_state.camera.z == self.EXPECTED_PLAYER_STATE.camera.z
             and player_state.camera.yaw == self.EXPECTED_PLAYER_STATE.camera.yaw
             and player_state.camera.scale > self.EXPECTED_PLAYER_STATE.camera.scale

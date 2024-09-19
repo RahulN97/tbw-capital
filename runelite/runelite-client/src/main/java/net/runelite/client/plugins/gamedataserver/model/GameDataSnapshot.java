@@ -12,7 +12,6 @@ import java.time.Instant;
 @Data
 public class GameDataSnapshot {
 	private Session session;
-	private MembershipStatus membershipStatus;
 	private Exchange exchange;
 	private Inventory inventory;
 	private Player player;

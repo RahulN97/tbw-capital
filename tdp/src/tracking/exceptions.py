@@ -12,3 +12,12 @@ class UnexpectedOrder(Exception):
             else f"Current exchange has offer: {str(slot)}, but book keeper has order: {str(order)}"
         )
         super().__init__(msg)
+
+
+class UnbookedOrder(Exception):
+    def __init__(self, prev_order: Order, new_order: Order) -> None:
+        msg: str = (
+            f"Attempting to overwrite active order {str(prev_order)} with new order {str(new_order)}."
+            "Orders must be booked and processed into trades."
+        )
+        super().__init__(msg)

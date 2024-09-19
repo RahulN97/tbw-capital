@@ -1,15 +1,13 @@
 from typing import Dict, List, Optional
 
-from pydantic import ConfigDict
-
 from core.clients.redis.models.trade_session.order import Order
 from core.clients.redis.models.trade_session.trade import Trade
 from core.clients.redis.models.trade_session.trade_session import TradeSession
 from core.clients.service import ApiBaseModel
+from core.config.environment import Environment
 
 
 class TradeSessionRequest(ApiBaseModel):
-    model_config = ConfigDict(use_enum_values=True, validate_default=True)
     session_id: str
 
 
@@ -23,6 +21,16 @@ class GetTradeSessionResponse(ApiBaseModel):
 
 
 class CreateTradeSessionRequest(TradeSessionRequest):
+    player_name: str
+    env: Environment
+    start_time: float
+
+
+class CreateTradeSessionResponse(ApiBaseModel):
+    trade_session: TradeSession
+
+
+class UpdateTradeSessionRequest(TradeSessionRequest):
     trade_session: TradeSession
 
 
@@ -48,10 +56,10 @@ class GetTradesResponse(ApiBaseModel):
     trades: Dict[str, List[Trade]]
 
 
-class UpdateTradesRequest(TradeSessionRequest):
+class CreateTradesRequest(TradeSessionRequest):
     calc_cycle: int
     time: Optional[float] = None
 
 
-class UpdateTradesResponse(ApiBaseModel):
+class CreateTradesResponse(ApiBaseModel):
     trades: Dict[str, List[Trade]]

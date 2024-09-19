@@ -55,6 +55,9 @@ public class GameDataServerPlugin extends Plugin {
 	private HttpServer server;
 	private Gson gson;
 
+	private String sessionId;
+	private long startTime;
+
 	@Provides
 	private GameDataServerConfig provideConfig(ConfigManager configManager) {
 		return configManager.getConfig(GameDataServerConfig.class);
@@ -69,11 +72,13 @@ public class GameDataServerPlugin extends Plugin {
 			.registerTypeAdapterFactory(configAdapterFactory)
 			.create();
 
+		sessionId = UUID.randomUUID().toString().replace("-", "");
+		startTime = Instant.now().getEpochSecond();
+
 		server = HttpServer.create(new InetSocketAddress(SERVER_PORT), 0);
 		server.createContext("/health", this::health);
 		server.createContext("/snapshot", this::serveGameDataSnapshot);
 		server.createContext("/session", this::serveSession);
-		server.createContext("/membership", this::serveMembershipStatus);
 		server.createContext("/exchange", this::serveExchangeData);
 		server.createContext("/inventory", this::serveInventoryData);
 		server.createContext("/player", this::servePlayerData);
@@ -110,7 +115,6 @@ public class GameDataServerPlugin extends Plugin {
 		log.info("Fetching game data snapshot");
 		GameDataSnapshot snapshot = GameDataSnapshot.builder()
 			.session(getSession())
-			.membershipStatus(getMembershipStatus())
 			.exchange(getExchangeData())
 			.inventory(getInventoryData())
 			.player(getPlayerData())
@@ -123,12 +127,6 @@ public class GameDataServerPlugin extends Plugin {
 		log.info("Fetching session data");
 		Session session = getSession();
 		sendResponse(httpExchange, session);
-	}
-
-	private void serveMembershipStatus(HttpExchange httpExchange) throws IOException {
-		log.info("Fetching membership status");
-		MembershipStatus membershipStatus = getMembershipStatus();
-		sendResponse(httpExchange, membershipStatus);
 	}
 
 	private void serveExchangeData(HttpExchange httpExchange) throws IOException {
@@ -174,13 +172,9 @@ public class GameDataServerPlugin extends Plugin {
 
 	private Session getSession() {
 		return Session.builder()
-			.id(UUID.randomUUID().toString().replace("-", ""))
-			.startTime(Instant.now().getEpochSecond())
-			.build();
-	}
-
-	private MembershipStatus getMembershipStatus() {
-		return MembershipStatus.builder()
+			.id(sessionId)
+			.startTime(startTime)
+			.playerName(client.getLocalPlayer().getName())
 			.isF2p(client.getVarcIntValue(VarClientInt.MEMBERSHIP_STATUS) == 0)
 			.build();
 	}
@@ -242,6 +236,8 @@ public class GameDataServerPlugin extends Plugin {
 	}
 
 	private Player getPlayerData() {
+		boolean loggedIn = client.getGameState() == GameState.LOGGED_IN;
+
 		Camera camera = Camera.builder()
 			.z(client.getCameraZ())
 			.yaw(client.getCameraYaw())
@@ -255,6 +251,7 @@ public class GameDataServerPlugin extends Plugin {
 			.build();
 
 		return Player.builder()
+			.loggedIn(loggedIn)
 			.location(location)
 			.camera(camera)
 			.build();

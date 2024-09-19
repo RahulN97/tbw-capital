@@ -4,7 +4,8 @@ from enum import Enum
 class OfferType(Enum):
 
     NOT_SPECIFIED = "NOT_SPECIFIED"
-    CANCEL = "CANCEL"
+    CANCEL_BUY = "CANCEL_BUY"
+    CANCEL_SELL = "CANCEL_SELL"
     BUY = "BUY"
     SELL = "SELL"
 

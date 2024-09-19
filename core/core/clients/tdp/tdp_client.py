@@ -4,6 +4,7 @@ from requests import Response, Session
 
 from core.clients.base_client import BaseClient
 from core.clients.redis.models.buy_limit.buy_limit import BuyLimit
+from core.clients.redis.models.pnl.pnl import Pnl
 from core.clients.redis.models.trade_session.order import Order
 from core.clients.redis.models.trade_session.trade import Trade
 from core.clients.redis.models.trade_session.trade_session import TradeSession
@@ -12,8 +13,12 @@ from core.clients.tdp.exceptions import TdpApiError, UnsupportedServiceCall
 from core.clients.tdp.models.item_container import ItemContainer
 from core.clients.tdp.stubs import SERVICE_DEFINITIONS
 from core.clients.tdp.stubs.limits import GetBuyLimitsRequest, GetBuyLimitsResponse, UpdateBuyLimitsRequest
+from core.clients.tdp.stubs.metrics import GetNetWorthRequest, GetNetWorthResponse, GetPnlRequest, GetPnlResponse
 from core.clients.tdp.stubs.session import (
     CreateTradeSessionRequest,
+    CreateTradeSessionResponse,
+    CreateTradesRequest,
+    CreateTradesResponse,
     GetOrdersRequest,
     GetOrdersResponse,
     GetTradeSessionRequest,
@@ -21,9 +26,9 @@ from core.clients.tdp.stubs.session import (
     GetTradesRequest,
     GetTradesResponse,
     UpdateOrdersRequest,
-    UpdateTradesRequest,
-    UpdateTradesResponse,
+    UpdateTradeSessionRequest,
 )
+from core.config.environment import Environment
 from core.logger import logger
 
 
@@ -63,13 +68,18 @@ class TdpClient(BaseClient):
         if service_call.response_type is not None:
             return service_call.response_type(**resp.json())
 
-    def get_limits(self, container: ItemContainer, item_ids: Optional[List[int]] = None) -> Dict[int, BuyLimit]:
-        req: GetBuyLimitsRequest = GetBuyLimitsRequest(container=container, item_ids=item_ids)
+    def get_limits(
+        self,
+        player_name: str,
+        container: ItemContainer,
+        item_ids: Optional[List[int]] = None,
+    ) -> Dict[int, BuyLimit]:
+        req: GetBuyLimitsRequest = GetBuyLimitsRequest(player_name=player_name, container=container, item_ids=item_ids)
         resp: GetBuyLimitsResponse = self.invoke("GetBuyLimits", req)
         return resp.buy_limits
 
-    def update_limits(self, cur_time: float) -> None:
-        req: UpdateBuyLimitsRequest = UpdateBuyLimitsRequest(time=cur_time)
+    def update_limits(self, player_name: str, cur_time: float) -> None:
+        req: UpdateBuyLimitsRequest = UpdateBuyLimitsRequest(player_name=player_name, time=cur_time)
         self.invoke("UpdateBuyLimits", req)
 
     def get_trade_session(self, session_id: str) -> TradeSession:
@@ -77,12 +87,28 @@ class TdpClient(BaseClient):
         resp: GetTradeSessionResponse = self.invoke("GetTradeSession", req)
         return resp.trade_session
 
-    def save_trade_session(self, trade_session: TradeSession) -> None:
+    def create_trade_session(
+        self,
+        session_id: str,
+        player_name: str,
+        env: Environment,
+        start_time: float,
+    ) -> TradeSession:
         req: CreateTradeSessionRequest = CreateTradeSessionRequest(
+            session_id=session_id,
+            player_name=player_name,
+            env=env,
+            start_time=start_time,
+        )
+        resp: CreateTradeSessionResponse = self.invoke("CreateTradeSession", req)
+        return resp.trade_session
+
+    def save_trade_session(self, trade_session: TradeSession) -> None:
+        req: UpdateTradeSessionRequest = UpdateTradeSessionRequest(
             session_id=trade_session.session_id,
             trade_session=trade_session,
         )
-        self.invoke("CreateTradeSession", req)
+        self.invoke("UpdateTradeSession", req)
 
     def get_orders(self, session_id: str, strats: Optional[List[str]] = None) -> Dict[str, List[Order]]:
         req: GetOrdersRequest = GetOrdersRequest(session_id=session_id, strats=strats)
@@ -99,6 +125,16 @@ class TdpClient(BaseClient):
         return resp.trades
 
     def book_trades(self, session_id: str, calc_cycle: int, time: Optional[float] = None) -> List[Trade]:
-        req: UpdateTradesRequest = UpdateTradesRequest(session_id=session_id, calc_cycle=calc_cycle, time=time)
-        resp: UpdateTradesResponse = self.invoke("UpdateTrades", req)
+        req: CreateTradesRequest = CreateTradesRequest(session_id=session_id, calc_cycle=calc_cycle, time=time)
+        resp: CreateTradesResponse = self.invoke("CreateTrades", req)
         return resp.trades
+
+    def get_pnl(self, session_id: str) -> Pnl:
+        req: GetPnlRequest = GetPnlRequest(session_id=session_id)
+        resp: GetPnlResponse = self.invoke("GetPnl", req)
+        return resp.pnl
+
+    def get_nw(self, session_id: str) -> int:
+        req: GetNetWorthRequest = GetNetWorthRequest(session_id=session_id)
+        resp: GetNetWorthResponse = self.invoke("GetNetWorth", req)
+        return resp.nw

@@ -25,18 +25,24 @@ def create_trader(config: AutotraderConfig) -> Trader:
     locator: ScreenLocator = ScreenLocator(randomize=config.humanize)
     controller: Controller = Controller(locator=locator, randomize=config.humanize)
     player: Player = Player(controller=controller, gds_client=gds_client)
-    order_executor: OrderExecutor = OrderExecutor(controller=controller, gds_client=gds_client)
+    order_executor: OrderExecutor = OrderExecutor(
+        controller=controller,
+        redis_client=redis_client,
+        gds_client=gds_client,
+        tdp_client=tdp_client,
+    )
 
     strat_factory: StrategyFactory = StrategyFactory(
         redis_client=redis_client,
         item_map=price_client.item_map,
-        is_f2p=gds_client.is_f2p,
+        is_f2p=gds_client.session_metadata.is_f2p,
     )
     strat_manager: StrategyManager = StrategyManager(strat_factory=strat_factory, gds_client=gds_client)
 
     return Trader(
         env=config.env,
         autotrader_wait=config.autotrader_wait,
+        redis_client=redis_client,
         price_client=price_client,
         gds_client=gds_client,
         tdp_client=tdp_client,
@@ -48,10 +54,11 @@ def create_trader(config: AutotraderConfig) -> Trader:
 
 def main() -> None:
     config: AutotraderConfig = AutotraderConfig()
-    trader: Trader = create_trader(config)
 
     logger.info(f"Waiting {int(config.autotrader_start_delay)} seconds before autotrader is activated.")
     time.sleep(config.autotrader_start_delay)
+
+    trader: Trader = create_trader(config)
     trader.start()
 
 

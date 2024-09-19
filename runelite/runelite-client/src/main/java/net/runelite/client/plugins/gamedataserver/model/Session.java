@@ -8,4 +8,6 @@ import lombok.Data;
 public class Session {
 	private String id;
 	private long startTime;
+	private String playerName;
+	private boolean isF2p;
 }

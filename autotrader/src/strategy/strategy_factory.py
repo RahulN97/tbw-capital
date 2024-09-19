@@ -7,7 +7,7 @@ from core.clients.price.models.item_metadata import ItemMetadata
 from core.clients.redis.redis_client import RedisClient
 
 from strategy.exceptions import UnsupportedStratError
-from strategy.mm import MMStrategy
+from strategy.implementations.mm import MMStrategy
 from strategy.strategy import BaseStrategy
 
 

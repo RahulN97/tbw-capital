@@ -1,10 +1,12 @@
 from typing import Annotated
 
 from core.clients.gds.gds_client import GdsClient
+from core.clients.price.price_client import PriceClient
 from core.clients.redis.redis_client import RedisClient
 from fastapi import Depends
 
 from config.tdp_config import TdpConfig
+from metrics.metrics_calculator import MetricsCalculator
 from tracking.book_keeper import BookKeeper
 
 
@@ -16,6 +18,13 @@ def get_config() -> TdpConfig:
 
 
 TdpConfigDep = Annotated[TdpConfig, Depends(get_config)]
+
+
+def get_price_client() -> PriceClient:
+    return PriceClient()
+
+
+PriceClientDep = Annotated[PriceClient, Depends(get_price_client)]
 
 
 def get_redis_client(config: TdpConfigDep) -> RedisClient:
@@ -37,3 +46,14 @@ def get_book_keeper(redis_client: RedisClientDep, gds_client: GdsClientDep) -> B
 
 
 BookKeeperDep = Annotated[BookKeeper, Depends(get_book_keeper)]
+
+
+def get_metrics_calculator(
+    redis_client: RedisClientDep,
+    gds_client: GdsClientDep,
+    price_client: PriceClientDep,
+) -> MetricsCalculator:
+    return MetricsCalculator(redis_client=redis_client, gds_client=gds_client, price_client=price_client)
+
+
+MetricsCalculatorDep = Annotated[MetricsCalculator, Depends(get_metrics_calculator)]

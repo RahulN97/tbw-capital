@@ -1,4 +1,3 @@
-import time
 from typing import Dict, List, Optional, Set
 
 from core.clients.gds.gds_client import GdsClient
@@ -16,7 +15,7 @@ class StrategyManager:
         self.gds_client: GdsClient = gds_client
         self.active_strats: Dict[str, BaseStrategy] = {}
 
-    def prepare_strats(self, cur_time: float) -> None:
+    def prepare_strats(self, cur_time: float) -> List[BaseStrategy]:
         live_config: LiveConfig = self.gds_client.get_live_config()
 
         strats_to_remove: Set[str] = set()
