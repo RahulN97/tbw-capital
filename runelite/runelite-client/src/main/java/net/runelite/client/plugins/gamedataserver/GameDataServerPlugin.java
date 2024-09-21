@@ -12,7 +12,8 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.gamedataserver.model.*;
+import net.runelite.client.plugins.gamedataserver.model.GameDataSnapshot;
+import net.runelite.client.plugins.gamedataserver.model.Session;
 import net.runelite.client.plugins.gamedataserver.model.chat.ChatBox;
 import net.runelite.client.plugins.gamedataserver.model.chat.Message;
 import net.runelite.client.plugins.gamedataserver.model.config.LiveConfig;
@@ -24,9 +25,9 @@ import net.runelite.client.plugins.gamedataserver.model.exchange.ExchangeSlot;
 import net.runelite.client.plugins.gamedataserver.model.exchange.ExchangeSlotState;
 import net.runelite.client.plugins.gamedataserver.model.inventory.Inventory;
 import net.runelite.client.plugins.gamedataserver.model.inventory.Item;
+import net.runelite.client.plugins.gamedataserver.model.player.Camera;
 import net.runelite.client.plugins.gamedataserver.model.player.Location;
 import net.runelite.client.plugins.gamedataserver.model.player.Player;
-import net.runelite.client.plugins.gamedataserver.model.player.Camera;
 import net.runelite.client.util.RuntimeTypeAdapterFactory;
 
 import java.io.IOException;
@@ -174,7 +175,7 @@ public class GameDataServerPlugin extends Plugin {
 		sendResponse(httpExchange, liveConfig);
 	}
 
-	private void serveChatBox(HttpExchange httpExchange) throws  IOException {
+	private void serveChatBox(HttpExchange httpExchange) throws IOException {
 		log.info("Fetching chat box contents");
 		ChatBox chatBox = getChatBox();
 		sendResponse(httpExchange, chatBox);
@@ -266,7 +267,7 @@ public class GameDataServerPlugin extends Plugin {
 	}
 
 	private String decodeUTF8(String input) {
-		return input.replaceAll("[^\\x00-\\x7F]"," ");
+		return input.replaceAll("[^\\x00-\\x7F]", " ");
 	}
 
 	private ChatBox getChatBox() {

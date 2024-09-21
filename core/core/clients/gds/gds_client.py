@@ -100,6 +100,7 @@ class GdsClient(BaseClient):
     def get_inventory(self) -> Inventory:
         endpoint: str = "/inventory"
         data: Dict[str, Any] = self.get(endpoint)
+        item_data: List[Dict[str, Any]] = data.get("items", [])
 
         items: List[Item] = [
             Item(
@@ -107,7 +108,7 @@ class GdsClient(BaseClient):
                 quantity=item["quantity"],
                 inventory_position=item["inventoryPosition"],
             )
-            for item in data["items"]
+            for item in item_data
         ]
         return Inventory(items=items)
 
@@ -130,8 +131,9 @@ class GdsClient(BaseClient):
     def get_chat_box(self) -> ChatBox:
         endpoint: str = "/chat"
         data: Dict[str, Any] = self.get(endpoint)
+        msg_data: List[Dict[str, Any]] = data.get("messages", [])
 
         messages: List[Message] = [
-            Message(content=msg["content"], sender=msg["sender"], time=msg["time"]) for msg in data["messages"]
+            Message(content=msg["content"], sender=msg["sender"], time=msg["timestamp"]) for msg in msg_data
         ]
         return ChatBox(messages=messages)

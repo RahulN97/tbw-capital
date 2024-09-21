@@ -21,16 +21,16 @@ class OrderAction(AbstractDataclass):
 
 
 @dataclass
+class CancelOrderAction(OrderAction, AbstractDataclass):
+    ge_slot: int
+
+
+@dataclass
 class InputOrderAction(OrderAction, AbstractDataclass):
     item_id: int
     item_name: str
     price: int
     quantity: int
-
-
-@dataclass
-class CancelOrderAction(OrderAction, AbstractDataclass):
-    ge_slot: int
 
 
 @dataclass

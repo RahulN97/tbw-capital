@@ -1,4 +1,5 @@
 ## shared ##
+dev-*.sh
 
 ## python services ##
 .env*

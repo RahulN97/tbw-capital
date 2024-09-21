@@ -1,11 +1,12 @@
 import random
 import time
 from datetime import datetime
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List
 from uuid import uuid4
 
 from core.clients.gds.gds_client import GdsClient
 from core.clients.gds.models.chat.chat_box import ChatBox
+from core.clients.gds.models.chat.message import Message
 from core.clients.gds.models.exchange.exchange import Exchange
 from core.clients.gds.models.exchange.exchange_slot import ExchangeSlot
 from core.clients.gds.models.exchange.exchange_slot_state import ExchangeSlotState
@@ -41,7 +42,17 @@ class OrderExecutor:
 
         self.session_id: str = gds_client.session_metadata.id
         self.player_name: str = gds_client.session_metadata.player_name
+        self.session_start: float = gds_client.session_metadata.start_time
         self.abort: bool = False
+
+    @staticmethod
+    def check_abort(f: Callable) -> Callable:
+        def check(self: "OrderExecutor", *args, **kwargs) -> Any:
+            if self.abort:
+                raise Exception("Autotrader process terminated unexpectedly. Interrupting order executor.")
+            return f(self, *args, **kwargs)
+
+        return check
 
     @staticmethod
     def control_ge_interface(f: Callable) -> Callable:
@@ -55,7 +66,8 @@ class OrderExecutor:
 
     def _sent_public_chat(self) -> bool:
         chat: ChatBox = self.gds_client.get_chat_box()
-        return any(msg.sender == self.player_name for msg in chat.messages)
+        messages: List[Message] = [m for m in chat.messages if m.time >= self.session_start]
+        return any(msg.sender == self.player_name for msg in messages)
 
     def _get_next_available_ge_slot(self) -> int:
         exchange: Exchange = self.gds_client.get_exchange()
@@ -71,12 +83,14 @@ class OrderExecutor:
                 return item.inventory_position
         raise MissingInventoryItemError(item_id)
 
+    @check_abort
     def _cancel_order(self, ge_slot: int) -> None:
         logger.info(f"Attempting to cancel order in GE slot: {ge_slot}")
         self.controller.click_ge_slot(ge_slot)
         self.controller.click_location("ge_abort_offer")
         self.controller.click_location("ge_back")
 
+    @check_abort
     def _input_order(self, order: InputOrderAction) -> None:
         self.controller.click_location("ge_enter_quantity")
         self.controller.type(str(order.quantity))
@@ -88,6 +102,7 @@ class OrderExecutor:
 
         self.controller.click_location("ge_confirm")
 
+    @check_abort
     def _handle_order(self, action: OrderAction) -> int:
         if isinstance(action, CancelOrderAction):
             self._cancel_order(action.ge_slot)
@@ -109,7 +124,7 @@ class OrderExecutor:
                 )
             order_msg: str = f"item {action.item_name}, price: {action.price}, quantity: {action.quantity}"
             logger.info(f"Submitting {type(action).__name__} in GE slot {ge_slot} - {order_msg}")
-            self.input_order(action)
+            self._input_order(action)
             return ge_slot
 
         raise UnsupportedOrderActionError(
@@ -164,9 +179,6 @@ class OrderExecutor:
             action_pause: float = random.uniform(self.MIN_ORDER_ACTION_PAUSE, self.MAX_ORDER_ACTION_PAUSE)
             time.sleep(action_pause)
 
-            if self.abort:
-                raise Exception("Autotrader process terminated unexpectedly")
-
             if self._sent_public_chat():
                 raise PlayerStateError("Player sent a message in chat box. Aborting to avoid bot detection")
 
@@ -186,17 +198,18 @@ class OrderExecutor:
 
     @control_ge_interface
     def book_trades(self, calc_cycle: int, cur_time: float) -> None:
-        trades: List[Trade] = self.tdp_client.book_trades(
+        trades_map: Dict[str, List[Trade]] = self.tdp_client.book_trades(
             session_id=self.session_id,
             calc_cycle=calc_cycle,
             time=cur_time,
         )
+        trades: List[Trade] = [t for trade_list in trades_map.values() for t in trade_list]
 
         exchange: Exchange = self.gds_client.get_exchange()
         slots: List[ExchangeSlot] = [
             s
             for s in exchange.slots
-            if s not in (ExchangeSlotState.BUYING, ExchangeSlotState.SELLING, ExchangeSlotState.EMPTY)
+            if s.state not in (ExchangeSlotState.BUYING, ExchangeSlotState.SELLING, ExchangeSlotState.EMPTY)
         ]
 
         assert len(trades) == len(slots), f"TDP booked {len(trades)} trades, but {len(slots)} slots are ready"
@@ -204,9 +217,8 @@ class OrderExecutor:
 
         for slot in slots:
             self.controller.click_ge_slot(slot.position)
-            self.controller.click_ge_slot("ge_collect_items")
-            self.controller.click_ge_slot("ge_collect_coins")
-            self.controller.click_location("ge_back")
+            self.controller.click_location("ge_collect_coins")
+            self.controller.click_location("ge_collect_items")
 
     @control_ge_interface
     def liquidate(self) -> None:

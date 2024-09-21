@@ -60,7 +60,7 @@ class TdpClient(BaseClient):
         data: Dict[str, Any] = request.model_dump()
         session_method: Callable = getattr(self.session, service_call.http_method.name.lower())
 
-        logger.info(f"Processing {call} - issuing {service_call.http_method.name} request to {service_call.endpoint}")
+        logger.info(f"Invoking {call} - issuing {service_call.http_method.name} request to {service_call.endpoint}")
         resp: Response = session_method(url=url, json=data, headers=self.HEADERS)
         if resp.status_code != 200:
             raise TdpApiError(resp.text)

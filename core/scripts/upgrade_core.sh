@@ -2,13 +2,13 @@
 
 INITIAL_DIR=$PWD
 PARENT_DIR=$(basename "$PWD")
-if [ "$PARENT_DIR" != "scripts" ]; then
-    echo "Must run the upgrade from within the scripts folder"
+if [ "$PARENT_DIR" != "core" ]; then
+    echo "Must run the upgrade from within core/, but outside scripts/"
     exit 0
 fi
 
 echo "Building core"
-cd .. && poetry install
+poetry install
 
 echo "Installing core into Trade Data Platform"
 cd ../tdp && poetry remove core

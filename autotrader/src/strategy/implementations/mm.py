@@ -19,15 +19,27 @@ from strategy.action import (
 from strategy.strategy import BaseStrategy
 
 
-# for demo
-# item_id: int = 561
-# item_name: str = self.item_map[item_id]
-# return [
-#     BuyAction(item_id=item_id, item_name=item_name, price=150, quantity=10),
-#     SellAction(item_id=item_id, item_name=item_name, price=160, quantity=5),
-#     CancelSellAction(ge_slot=0),
-#     SellAction(item_id=item_id, item_name=item_name, price=100, quantity=10),
-# ]
+# def _demo(self):
+#     id1: int = 561
+#     name1: str = self.item_map[id1].name
+#     id2: int = 556
+#     name2: str = self.item_map[id2].name
+#     if self.demo == 1:
+#         self.demo += 1
+#         return [
+#             BuyAction(item_id=id1, item_name=name1, price=150, quantity=10),
+#             BuyAction(item_id=id2, item_name=name2, price=10, quantity=25),
+#         ]
+#     if self.demo == 2:
+#         self.demo += 1
+#         return [
+#             SellAction(item_id=id1, item_name=name1, price=100, quantity=10),
+#             SellAction(item_id=id2, item_name=name2, price=20, quantity=20),
+#         ]
+#     if self.demo == 3:
+#         self.demo += 1
+#         return [CancelSellAction(ge_slot=1)]
+#     return []
 
 
 class MMStrategy(BaseStrategy):

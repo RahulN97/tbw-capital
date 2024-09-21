@@ -9,7 +9,6 @@ from core.clients.gds.models.exchange.exchange_slot_state import ExchangeSlotSta
 from core.clients.gds.models.inventory.inventory import Inventory
 from core.clients.price.models.item_metadata import ItemMetadata
 from core.clients.price.models.price_data_snapshot import PriceDataSnapshot
-from core.clients.redis.models.trade_session.order import Order
 from core.clients.redis.redis_client import RedisClient
 
 from strategy.action import BuyAction, CancelOrderAction, OrderAction, SellAction
@@ -49,9 +48,6 @@ class BaseStrategy(ABC):
         inventory: Inventory,
         price_data: PriceDataSnapshot,
     ) -> List[OrderAction]:
-        pass
-
-    def generate_actions(self) -> List[Order]:
         pass
 
     @staticmethod

@@ -78,13 +78,28 @@ class BookKeeper:
     def save_trade_session(self, session: TradeSession) -> None:
         self.redis_client.set_trade_session(session)
 
+    @staticmethod
+    def _is_corresponding_cancel_order(prev_order: Order, new_order: Order) -> bool:
+        allowed_sell: bool = (
+            prev_order.metadata.type == OfferType.SELL and new_order.metadata.type == OfferType.CANCEL_SELL
+        )
+        allowed_buy: bool = (
+            prev_order.metadata.type == OfferType.BUY and new_order.metadata.type == OfferType.CANCEL_BUY
+        )
+        return allowed_sell or allowed_buy
+
     def save_orders(self, session_id: str, orders: Dict[str, List[Order]]) -> None:
         active_orders: Dict[int, Order] = self.redis_client.get_active_orders(session_id=session_id)
         flattened_orders: List[Order] = [o for o_list in orders.values() for o in o_list]
         for order in flattened_orders:
-            if order.metadata.ge_slot in active_orders:
+            if order.metadata.ge_slot in active_orders and not self._is_corresponding_cancel_order(
+                prev_order=active_orders[order.metadata.ge_slot],
+                new_order=order,
+            ):
                 raise UnbookedOrder(prev_order=active_orders[order.metadata.ge_slot], new_order=order)
+
             active_orders[order.metadata.ge_slot] = order
+
         self.redis_client.append_orders(session_id=session_id, orders=orders)
         self.redis_client.set_active_orders(session_id=session_id, active_orders=active_orders)
 
@@ -99,7 +114,7 @@ class BookKeeper:
         )
         return (
             matching_offer_type
-            and slot.position == order.ge_slot
+            and slot.position == order.metadata.ge_slot
             and slot.item_id == order.metadata.item_id
             and slot.price == order.metadata.price
             and slot.total_quantity == order.metadata.quantity
