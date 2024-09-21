@@ -5,6 +5,8 @@ from requests import Response, Session
 
 from core.clients.base_client import BaseClient
 from core.clients.gds.exceptions import GdsApiError, GdsUnexpectedResponseError
+from core.clients.gds.models.chat.chat_box import ChatBox
+from core.clients.gds.models.chat.message import Message
 from core.clients.gds.models.config.live_config import LiveConfig
 from core.clients.gds.models.config.strat_config import MMStratConfig, StratConfig
 from core.clients.gds.models.config.top_level_config import TopLevelConfig
@@ -124,3 +126,12 @@ class GdsClient(BaseClient):
         location: PlayerLocation = PlayerLocation(x=location_data["x"], y=location_data["y"])
 
         return PlayerState(logged_in=data["loggedIn"], camera=camera, location=location)
+
+    def get_chat_box(self) -> ChatBox:
+        endpoint: str = "/chat"
+        data: Dict[str, Any] = self.get(endpoint)
+
+        messages: List[Message] = [
+            Message(content=msg["content"], sender=msg["sender"], time=msg["time"]) for msg in data["messages"]
+        ]
+        return ChatBox(messages=messages)

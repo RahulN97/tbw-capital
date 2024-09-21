@@ -13,6 +13,8 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.gamedataserver.model.*;
+import net.runelite.client.plugins.gamedataserver.model.chat.ChatBox;
+import net.runelite.client.plugins.gamedataserver.model.chat.Message;
 import net.runelite.client.plugins.gamedataserver.model.config.LiveConfig;
 import net.runelite.client.plugins.gamedataserver.model.config.MMConfig;
 import net.runelite.client.plugins.gamedataserver.model.config.StratConfig;
@@ -83,6 +85,7 @@ public class GameDataServerPlugin extends Plugin {
 		server.createContext("/inventory", this::serveInventoryData);
 		server.createContext("/player", this::servePlayerData);
 		server.createContext("/config", this::serveLiveConfig);
+		server.createContext("/chat", this::serveChatBox);
 		server.setExecutor(Executors.newSingleThreadExecutor());
 		server.start();
 	}
@@ -118,6 +121,7 @@ public class GameDataServerPlugin extends Plugin {
 			.exchange(getExchangeData())
 			.inventory(getInventoryData())
 			.player(getPlayerData())
+			.chatBox(getChatBox())
 			.creationTime(Instant.now())
 			.build();
 		sendResponse(httpExchange, snapshot);
@@ -170,6 +174,12 @@ public class GameDataServerPlugin extends Plugin {
 		sendResponse(httpExchange, liveConfig);
 	}
 
+	private void serveChatBox(HttpExchange httpExchange) throws  IOException {
+		log.info("Fetching chat box contents");
+		ChatBox chatBox = getChatBox();
+		sendResponse(httpExchange, chatBox);
+	}
+
 	private Session getSession() {
 		return Session.builder()
 			.id(sessionId)
@@ -186,21 +196,20 @@ public class GameDataServerPlugin extends Plugin {
 		}
 
 		List<ExchangeSlot> slots = IntStream.range(0, Math.min(offers.length, MAX_GE_SLOTS))
-			.mapToObj(
-				i -> {
-					GrandExchangeOffer offer = offers[i];
-					if (offer.getState() == GrandExchangeOfferState.EMPTY) {
-						return ExchangeSlot.asEmpty(i);
-					}
-					return ExchangeSlot.builder()
-						.position(i)
-						.itemId(offer.getItemId())
-						.price(offer.getPrice())
-						.quantityTransacted(offer.getQuantitySold())
-						.totalQuantity(offer.getTotalQuantity())
-						.state(ExchangeSlotState.fromGrandExchangeOfferState(offer.getState()))
-						.build();
-				})
+			.mapToObj(i -> {
+				GrandExchangeOffer offer = offers[i];
+				if (offer.getState() == GrandExchangeOfferState.EMPTY) {
+					return ExchangeSlot.asEmpty(i);
+				}
+				return ExchangeSlot.builder()
+					.position(i)
+					.itemId(offer.getItemId())
+					.price(offer.getPrice())
+					.quantityTransacted(offer.getQuantitySold())
+					.totalQuantity(offer.getTotalQuantity())
+					.state(ExchangeSlotState.fromGrandExchangeOfferState(offer.getState()))
+					.build();
+			})
 			.collect(Collectors.toList());
 
 		return Exchange.builder()
@@ -215,18 +224,17 @@ public class GameDataServerPlugin extends Plugin {
 		}
 
 		List<Item> items = IntStream.range(0, MAX_INVENTORY_SLOTS)
-			.mapToObj(
-				i -> {
-					net.runelite.api.Item slotItem = itemContainer.getItem(i);
-					if (slotItem == null) {
-						return null;
-					}
-					return Item.builder()
-						.id(slotItem.getId())
-						.quantity(slotItem.getQuantity())
-						.inventoryPosition(i)
-						.build();
-				})
+			.mapToObj(i -> {
+				net.runelite.api.Item slotItem = itemContainer.getItem(i);
+				if (slotItem == null) {
+					return null;
+				}
+				return Item.builder()
+					.id(slotItem.getId())
+					.quantity(slotItem.getQuantity())
+					.inventoryPosition(i)
+					.build();
+			})
 			.filter(Objects::nonNull)
 			.collect(Collectors.toList());
 
@@ -254,6 +262,30 @@ public class GameDataServerPlugin extends Plugin {
 			.loggedIn(loggedIn)
 			.location(location)
 			.camera(camera)
+			.build();
+	}
+
+	private String decodeUTF8(String input) {
+		return input.replaceAll("[^\\x00-\\x7F]"," ");
+	}
+
+	private ChatBox getChatBox() {
+		ChatLineBuffer buffer = client.getChatLineMap().get(ChatMessageType.PUBLICCHAT.getType());
+		if (buffer == null) {
+			return ChatBox.builder().build();
+		}
+		MessageNode[] lines = buffer.getLines();
+		List<Message> messages = Arrays.stream(lines)
+			.filter(Objects::nonNull)
+			.map(l -> Message.builder()
+				.content(decodeUTF8(l.getValue()))
+				.sender(decodeUTF8(l.getName()))
+				.timestamp(l.getTimestamp())
+				.build())
+			.collect(Collectors.toList());
+
+		return ChatBox.builder()
+			.messages(messages)
 			.build();
 	}
 }

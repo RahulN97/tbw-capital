@@ -82,7 +82,7 @@ class Trader:
             cur_time=self.session_metadata.start_time,
         )
 
-        logger.info("Liquidating and collecitng any remaining GE orders")
+        logger.info("Liquidating and collecting any remaining GE orders")
         self.order_executor.liquidate()
 
         logger.info(f"Setting up session {self.session_metadata.id} for player {self.session_metadata.player_name}")

@@ -5,6 +5,7 @@ from typing import Any, Callable, List
 from uuid import uuid4
 
 from core.clients.gds.gds_client import GdsClient
+from core.clients.gds.models.chat.chat_box import ChatBox
 from core.clients.gds.models.exchange.exchange import Exchange
 from core.clients.gds.models.exchange.exchange_slot import ExchangeSlot
 from core.clients.gds.models.exchange.exchange_slot_state import ExchangeSlotState
@@ -16,7 +17,7 @@ from core.clients.redis.redis_client import RedisClient
 from core.clients.tdp.tdp_client import TdpClient
 from core.logger import logger
 
-from exceptions import MissingInventoryItemError, NoAvailableGeSlotError, UnsupportedOrderActionError
+from exceptions import MissingInventoryItemError, NoAvailableGeSlotError, PlayerStateError, UnsupportedOrderActionError
 from interface.controller import Controller
 from strategy.action import BuyAction, CancelOrderAction, InputOrderAction, OrderAction, SellAction
 
@@ -37,7 +38,9 @@ class OrderExecutor:
         self.redis_client: RedisClient = redis_client
         self.gds_client: GdsClient = gds_client
         self.tdp_client: TdpClient = tdp_client
+
         self.session_id: str = gds_client.session_metadata.id
+        self.player_name: str = gds_client.session_metadata.player_name
         self.abort: bool = False
 
     @staticmethod
@@ -49,6 +52,10 @@ class OrderExecutor:
             return result
 
         return use_ge
+
+    def _sent_public_chat(self) -> bool:
+        chat: ChatBox = self.gds_client.get_chat_box()
+        return any(msg.sender == self.player_name for msg in chat.messages)
 
     def _get_next_available_ge_slot(self) -> int:
         exchange: Exchange = self.gds_client.get_exchange()
@@ -160,6 +167,9 @@ class OrderExecutor:
             if self.abort:
                 raise Exception("Autotrader process terminated unexpectedly")
 
+            if self._sent_public_chat():
+                raise PlayerStateError("Player sent a message in chat box. Aborting to avoid bot detection")
+
             ge_slot: int = self._handle_order(action)
             orders.append(
                 self._create_order(
@@ -194,7 +204,8 @@ class OrderExecutor:
 
         for slot in slots:
             self.controller.click_ge_slot(slot.position)
-            # TODO: collect box 1 and box 2
+            self.controller.click_ge_slot("ge_collect_items")
+            self.controller.click_ge_slot("ge_collect_coins")
             self.controller.click_location("ge_back")
 
     @control_ge_interface

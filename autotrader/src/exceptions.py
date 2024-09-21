@@ -13,3 +13,8 @@ class MissingInventoryItemError(Exception):
 class NoAvailableGeSlotError(Exception):
     def __init__(self) -> None:
         super().__init__("No available GE slots to execute order.")
+
+
+class PlayerStateError(Exception):
+    def __init__(self, msg) -> None:
+        super().__init__(msg)

@@ -109,6 +109,28 @@
                 "x": 30,
                 "y": 3
             }
+        },
+        {
+            "name": "ge_collect_items",
+            "coordinates": {
+                "x": 643,
+                "y": 516
+            },
+            "jitter": {
+                "x": 10,
+                "y": 10
+            }
+        },
+        {
+            "name": "ge_collect_coins",
+            "coordinates": {
+                "x": 694,
+                "y": 516
+            },
+            "jitter": {
+                "x": 10,
+                "y": 10
+            }
         }
     ]
 }
