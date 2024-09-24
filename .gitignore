@@ -6,12 +6,34 @@ dev-*.sh
 .venv
 __pycache__
 
+## core ##
+core/.openapi-generator
+
+# gds
+core/core/generated/gds/*
+!core/core/generated/gds/.openapi-generator-ignore
+
+# tdp
+core/core/generated/tdp/*
+!core/core/generated/tdp/.openapi-generator-ignore
+
 ## redis ##
 redis/store/*
 
 ## runelite ##
-# have git recursively ignore/unignore subdirs so that we only track the nested dirs containing relevant plugin code
+# have git recursively ignore/unignore subdirs so that we only track the nested dirs containing relevant code
 runelite/*
+
+# runelite-core
+!runelite/core
+runelite/core/*
+!runelite/core/src/main/java
+runelite/core/src/main/java/*
+!runelite/core/.openapi-generator-ignore
+!runelite/core/pom.xml
+!runelite/core/README.md
+
+# runelite-client
 !runelite/runelite-client/
 runelite/runelite-client/*
 !runelite/runelite-client/src/
@@ -47,8 +69,11 @@ runelite/runelite-client/src/test/java/net/runelite/client/*
 runelite/runelite-client/src/test/java/net/runelite/client/plugins/*
 !runelite/runelite-client/src/test/java/net/runelite/client/plugins/gamedataserver/
 
-# sync script
-!runelite/sync_runelite.sh
+# script
+!runelite/scripts/
+!runelite/scripts/version
+!runelite/scripts/sync_runelite.sh
+!runelite/scripts/add_core_dependency.py
 
 # misc
 target

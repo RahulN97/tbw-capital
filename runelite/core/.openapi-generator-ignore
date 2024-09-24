@@ -1,0 +1,14 @@
+.github/
+.gitignore
+.openapi-generator
+.openapi-generator-ignore
+.travis.yml
+build.gradle
+build.sbt
+git_push.sh
+gradle
+gradle.properties
+gradlew
+gradlew.bat
+pom.xml
+settings.gradle

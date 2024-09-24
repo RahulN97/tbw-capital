@@ -1,8 +1,8 @@
 #!/bin/bash
 
-TAG="runelite-parent-1.10.37"
+VERSION=$(<"scripts/version")
+TAG="runelite-parent-$VERSION"
 REPO_URL="git@github.com:runelite/runelite.git"
-TEMP_DIR="temp-runelite"
 
 git -C . clean -ndx -e .idea
 read -p "The above will be deleted and synced back from runelite's git repo. Proceed? (y/n)" confirm
@@ -15,12 +15,15 @@ else
     exit 0
 fi
 
-mkdir -p $TEMP_DIR
-
+TEMP_DIR=$(mktemp -d)
 git clone --depth 1 --branch $TAG $REPO_URL $TEMP_DIR
 
-rsync -av --exclude='.git' $TEMP_DIR/ .
+/usr/bin/python3 -m scripts.add_core_dependency \
+  --version $VERSION \
+  --parent $TEMP_DIR/pom.xml \
+  --client $TEMP_DIR/runelite-client/pom.xml
 
+rsync -av --exclude='.git' $TEMP_DIR/ .
 rm -rf $TEMP_DIR
 
 echo "Sync complete. Runelite version $TAG has been copied to current directory."

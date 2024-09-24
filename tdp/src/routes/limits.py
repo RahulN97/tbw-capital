@@ -19,7 +19,7 @@ from routes.common import handle_exceptions
 router: APIRouter = APIRouter()
 
 
-@router.get("/", response_model=GetBuyLimitsResponse)
+@router.get("", response_model=GetBuyLimitsResponse)
 @handle_exceptions
 async def get_buy_limits(
     redis_client: RedisClientDep,
@@ -54,7 +54,7 @@ async def get_buy_limits(
     return GetBuyLimitsResponse(buy_limits=buy_limits)
 
 
-@router.post("/")
+@router.post("")
 @handle_exceptions
 async def update_buy_limits(book_keeper: BookKeeperDep, request: UpdateBuyLimitsRequest) -> None:
     update_time: float = request.time or datetime.now().timestamp()

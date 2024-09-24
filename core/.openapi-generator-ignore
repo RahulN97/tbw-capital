@@ -1,0 +1,16 @@
+.github/
+.gitignore
+.gitlab-ci.yml
+.openapi-generator*
+.travis.yml
+docs/
+git_push.sh
+poetry.lock
+pyproject.toml
+README.md
+requirements.txt
+setup.cfg
+setup.py
+test/
+test-requirements.txt
+tox.ini

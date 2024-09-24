@@ -64,7 +64,7 @@ def create_new_trade_session(
     )
 
 
-@router.get("/", response_model=GetTradeSessionResponse)
+@router.get("", response_model=GetTradeSessionResponse)
 @handle_exceptions
 async def get_trade_session(
     redis_client: RedisClientDep,
@@ -80,7 +80,7 @@ async def get_trade_session(
         )
 
 
-@router.post("/", response_model=CreateTradeSessionResponse)
+@router.post("", response_model=CreateTradeSessionResponse)
 @handle_exceptions
 async def create_trade_session(
     redis_client: RedisClientDep,
@@ -119,7 +119,7 @@ async def create_trade_session(
         )
 
 
-@router.put("/")
+@router.put("")
 @handle_exceptions
 async def update_trade_session(redis_client: RedisClientDep, request: UpdateTradeSessionRequest) -> None:
     redis_client.set_trade_session(trade_session=request.trade_session)
