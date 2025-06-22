@@ -2,7 +2,6 @@ from typing import Any, Callable, Dict, List, Optional
 
 from requests import Response, Session
 
-from core.clients.base_client import BaseClient
 from core.clients.redis.models.buy_limit.buy_limit import BuyLimit
 from core.clients.redis.models.pnl.pnl import Pnl
 from core.clients.redis.models.trade_session.order import Order
@@ -32,7 +31,7 @@ from core.config.environment import Environment
 from core.logger import logger
 
 
-class TdpClient(BaseClient):
+class TdpClient:
 
     HEADERS: Dict[str, str] = {"Content-Type": "application/json"}
 

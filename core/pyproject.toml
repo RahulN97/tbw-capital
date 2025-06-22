@@ -1,13 +1,15 @@
 [tool.poetry]
 name = "core"
-version = "0.6.0"
+version = "0.7.0"
 description = "Shared library for python services in TBW Capital"
 authors = ["Rahul Nambiar <rahbiar@gmail.com>"]
 readme = "README.md"
+include = ["core/generated/**/*"]
 packages = [
-    { include = "*", from = "core", to = "core" },
-    { include = "clients", from = "core", to = "core" },
-    { include = "config", from = "core", to = "core" },
+  { include = "*", from = "core", to = "core" },
+  { include = "clients", from = "core", to = "core" },
+  { include = "config", from = "core", to = "core" },
+  { include = "generated", from = "core", to = "core" },
 ]
 
 [tool.poetry.dependencies]

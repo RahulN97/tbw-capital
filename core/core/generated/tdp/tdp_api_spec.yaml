@@ -1,0 +1,706 @@
+openapi: 3.0.0
+info:
+  title: Trade Data Platform API
+  version: 1.0.0
+
+paths:
+  /limits:
+    get:
+      operationId: GetBuyLimits
+      summary: Get Buy Limits
+      description: Retrieve the buy limits for items.
+      parameters:
+        - name: player_name
+          in: query
+          description: Name of the player
+          required: true
+          schema:
+            type: string
+        - name: container
+          in: query
+          description: Item container type
+          required: true
+          schema:
+            $ref: "#/components/schemas/ItemContainer"
+        - name: item_ids
+          in: query
+          description: Optional list of item IDs to filter
+          required: false
+          schema:
+            type: array
+            items:
+              type: integer
+      responses:
+        "200":
+          description: Successfully retrieved buy limits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetBuyLimitsResponse"
+
+    post:
+      operationId: UpdateBuyLimits
+      summary: Update Buy Limits
+      description: Update the buy limits for items.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBuyLimitsRequest"
+      responses:
+        "200":
+          description: Successfully updated buy limits (no response body)
+
+  /session:
+    get:
+      operationId: GetTradeSession
+      summary: Get Trade Session
+      description: Retrieve an existing trade session by session_id.
+      parameters:
+        - name: session_id
+          in: query
+          description: Unique session identifier
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully retrieved the trade session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetTradeSessionResponse"
+
+    post:
+      operationId: CreateTradeSession
+      summary: Create Trade Session
+      description: Create a new trade session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTradeSessionRequest"
+      responses:
+        "200":
+          description: Successfully created the trade session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateTradeSessionResponse"
+
+    put:
+      operationId: UpdateTradeSession
+      summary: Update Trade Session
+      description: Update the details of an existing trade session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTradeSessionRequest"
+      responses:
+        "200":
+          description: Successfully updated the trade session (no response body)
+
+  /session/orders:
+    get:
+      operationId: GetOrders
+      summary: Get Orders
+      description: Retrieve orders for a given session.
+      parameters:
+        - name: session_id
+          in: query
+          description: Unique session identifier
+          required: true
+          schema:
+            type: string
+        - name: strats
+          in: query
+          description: Optional list of strategy names to filter
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          description: Successfully retrieved orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetOrdersResponse"
+
+    put:
+      operationId: UpdateOrders
+      summary: Update Orders
+      description: Update or overwrite orders for a given session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrdersRequest"
+      responses:
+        "200":
+          description: Successfully updated orders (no response body)
+
+  /session/trades:
+    get:
+      operationId: GetTrades
+      summary: Get Trades
+      description: Retrieve trades for a given session.
+      parameters:
+        - name: session_id
+          in: query
+          description: Unique session identifier
+          required: true
+          schema:
+            type: string
+        - name: strats
+          in: query
+          description: Optional list of strategy names to filter
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          description: Successfully retrieved trades
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetTradesResponse"
+
+    post:
+      operationId: CreateTrades
+      summary: Create Trades
+      description: Create new trades for a given session.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTradesRequest"
+      responses:
+        "200":
+          description: Successfully created trades
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateTradesResponse"
+
+  /metrics/pnl:
+    get:
+      operationId: GetPnl
+      summary: Get PnL
+      description: Retrieve profit and loss for a session.
+      parameters:
+        - name: session_id
+          in: query
+          description: Unique session identifier
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully retrieved PnL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPnlResponse"
+
+  /metrics/nw:
+    get:
+      operationId: GetNetWorth
+      summary: Get Net Worth
+      description: Retrieve net worth for a session.
+      parameters:
+        - name: session_id
+          in: query
+          description: Unique session identifier
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successfully retrieved Net Worth
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetNetWorthResponse"
+
+components:
+  schemas:
+    # --------------------
+    # BuyLimits
+    # --------------------
+    BuyLimitsRequest:
+      type: object
+      properties:
+        player_name:
+          type: string
+      required:
+        - player_name
+
+    GetBuyLimitsRequest:
+      allOf:
+        - $ref: "#/components/schemas/BuyLimitsRequest"
+        - type: object
+          properties:
+            container:
+              $ref: "#/components/schemas/ItemContainer"
+            item_ids:
+              type: array
+              items:
+                type: integer
+
+    GetBuyLimitsResponse:
+      allOf:
+        - $ref: "#/components/schemas/BuyLimitsRequest"
+        - type: object
+          properties:
+            buy_limits:
+              type: object
+              additionalProperties:
+                $ref: "#/components/schemas/BuyLimit"
+      required:
+        - buy_limits
+
+    UpdateBuyLimitsRequest:
+      allOf:
+        - $ref: "#/components/schemas/BuyLimitsRequest"
+        - type: object
+          properties:
+            time:
+              type: number
+      required:
+        - time
+
+    BuyLimit:
+      type: object
+      properties:
+        item_id:
+          type: integer
+        bought:
+          type: integer
+        limit:
+          type: integer
+        reset_time:
+          type: number
+          nullable: true
+      required:
+        - item_id
+        - bought
+        - limit
+
+    ItemContainer:
+      type: string
+      enum:
+        - NOT_SPECIFIED
+        - ALL
+        - EXCHANGE
+        - INVENTORY
+
+    # -------------
+    # Trade Session
+    # -------------
+    TradeSessionRequest:
+      type: object
+      properties:
+        session_id:
+          type: string
+      required:
+        - session_id
+
+    GetTradeSessionRequest:
+      allOf:
+        - $ref: "#/components/schemas/TradeSessionRequest"
+
+    GetTradeSessionResponse:
+      type: object
+      properties:
+        trade_session:
+          $ref: "#/components/schemas/TradeSession"
+      required:
+        - trade_session
+
+    CreateTradeSessionRequest:
+      allOf:
+        - $ref: "#/components/schemas/TradeSessionRequest"
+        - type: object
+          properties:
+            player_name:
+              type: string
+            env:
+              $ref: "#/components/schemas/Environment"
+            start_time:
+              type: number
+          required:
+            - player_name
+            - env
+            - start_time
+
+    CreateTradeSessionResponse:
+      type: object
+      properties:
+        trade_session:
+          $ref: "#/components/schemas/TradeSession"
+      required:
+        - trade_session
+
+    UpdateTradeSessionRequest:
+      allOf:
+        - $ref: "#/components/schemas/TradeSessionRequest"
+        - type: object
+          properties:
+            trade_session:
+              $ref: "#/components/schemas/TradeSession"
+          required:
+            - trade_session
+
+    TradeSession:
+      type: object
+      properties:
+        session_id:
+          type: string
+        player_name:
+          type: string
+        env:
+          $ref: "#/components/schemas/Environment"
+        start_metadata:
+          $ref: "#/components/schemas/StartMetadata"
+        active_orders:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Order"
+        orders:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/Order"
+        trades:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/Trade"
+      required:
+        - session_id
+        - player_name
+        - env
+        - start_metadata
+        - active_orders
+        - orders
+        - trades
+
+    StartMetadata:
+      type: object
+      properties:
+        start_time:
+          type: number
+        start_nw:
+          type: integer
+        start_items:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+        - start_time
+        - start_nw
+        - start_items
+
+    # -------------
+    # Orders
+    # -------------
+    GetOrdersRequest:
+      allOf:
+        - $ref: "#/components/schemas/TradeSessionRequest"
+        - type: object
+          properties:
+            strats:
+              type: array
+              items:
+                type: string
+
+    GetOrdersResponse:
+      type: object
+      properties:
+        orders:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/Order"
+      required:
+        - orders
+
+    UpdateOrdersRequest:
+      allOf:
+        - $ref: "#/components/schemas/TradeSessionRequest"
+        - type: object
+          properties:
+            orders:
+              type: array
+              items:
+                $ref: "#/components/schemas/Order"
+          required:
+            - orders
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+        calc_cycle:
+          type: integer
+        strat_name:
+          type: string
+        metadata:
+          $ref: "#/components/schemas/OfferMetadata"
+        time:
+          type: number
+      required:
+        - id
+        - calc_cycle
+        - strat_name
+        - metadata
+        - time
+
+    OfferMetadata:
+      type: object
+      properties:
+        type:
+          $ref: "#/components/schemas/OfferType"
+        item_id:
+          type: integer
+        price:
+          type: integer
+        quantity:
+          type: integer
+        ge_slot:
+          type: integer
+      required:
+        - type
+        - item_id
+        - price
+        - quantity
+        - ge_slot
+
+    # -------------
+    # Trades
+    # -------------
+    GetTradesRequest:
+      allOf:
+        - $ref: "#/components/schemas/TradeSessionRequest"
+        - type: object
+          properties:
+            strats:
+              type: array
+              items:
+                type: string
+
+    GetTradesResponse:
+      type: object
+      properties:
+        trades:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/Trade"
+      required:
+        - trades
+
+    CreateTradesRequest:
+      allOf:
+        - $ref: "#/components/schemas/TradeSessionRequest"
+        - type: object
+          properties:
+            calc_cycle:
+              type: integer
+            time:
+              type: number
+              nullable: true
+          required:
+            - calc_cycle
+
+    CreateTradesResponse:
+      type: object
+      properties:
+        trades:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/Trade"
+      required:
+        - trades
+
+    Trade:
+      type: object
+      properties:
+        id:
+          type: string
+        calc_cycle:
+          type: integer
+        strat_name:
+          type: string
+        transacted:
+          type: integer
+        metadata:
+          $ref: "#/components/schemas/OfferMetadata"
+        time:
+          type: number
+      required:
+        - id
+        - calc_cycle
+        - strat_name
+        - transacted
+        - metadata
+        - time
+
+    # -------------
+    # Metrics
+    # -------------
+    MetricsRequest:
+      type: object
+      properties:
+        session_id:
+          type: string
+      required:
+        - session_id
+
+    GetPnlRequest:
+      allOf:
+        - $ref: "#/components/schemas/MetricsRequest"
+
+    GetPnlResponse:
+      type: object
+      properties:
+        pnl:
+          $ref: "#/components/schemas/Pnl"
+      required:
+        - pnl
+
+    GetNetWorthRequest:
+      allOf:
+        - $ref: "#/components/schemas/MetricsRequest"
+
+    GetNetWorthResponse:
+      type: object
+      properties:
+        nw:
+          type: integer
+      required:
+        - nw
+
+    Pnl:
+      type: object
+      properties:
+        session_id:
+          type: string
+        total_pnl:
+          type: integer
+        pnl_snapshots:
+          type: array
+          items:
+            $ref: "#/components/schemas/PnlSnapshot"
+        update_time:
+          type: number
+      required:
+        - session_id
+        - total_pnl
+        - pnl_snapshots
+        - update_time
+
+    PnlSnapshot:
+      type: object
+      properties:
+        strat_pnl:
+          type: object
+          additionalProperties:
+            type: integer
+        calc_data:
+          $ref: "#/components/schemas/PnlCalcData"
+        update_time:
+          type: number
+      required:
+        - strat_pnl
+        - calc_data
+        - update_time
+
+    PnlCalcData:
+      type: object
+      properties:
+        trade_ids:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        inv_snapshot:
+          $ref: "#/components/schemas/Inventory"
+        exchange_snapshot:
+          $ref: "#/components/schemas/Exchange"
+        prices_snapshot:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/LatestPrice"
+      required:
+        - trade_ids
+        - inv_snapshot
+        - exchange_snapshot
+        - prices_snapshot
+
+    # --------------------------------------------------------------------------
+    # Below are placeholders for your other Redis/GDS/Price models. Adjust as needed
+    # --------------------------------------------------------------------------
+    Inventory:
+      type: object
+      description: "Placeholder for Inventory object structure"
+      properties:
+        items:
+          type: object
+          additionalProperties:
+            type: integer
+
+    Exchange:
+      type: object
+      description: "Placeholder for Exchange object structure"
+      properties:
+        offers:
+          type: array
+          items:
+            type: string
+
+    LatestPrice:
+      type: object
+      description: "Placeholder for LatestPrice object structure"
+      properties:
+        price:
+          type: integer
+
+    # -------------
+    # Enums
+    # -------------
+    Environment:
+      type: string
+      description: "Environment enumeration"
+      enum:
+        - DEV
+        - STAGE
+        - PROD
+
+    OfferType:
+      type: string
+      description: "OfferType enumeration"
+      enum:
+        - NOT_SPECIFIED
+        - CANCEL_BUY
+        - CANCEL_SELL
+        - BUY
+        - SELL

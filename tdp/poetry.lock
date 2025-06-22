@@ -212,7 +212,7 @@ files = [
 
 [[package]]
 name = "core"
-version = "0.6.0"
+version = "0.7.0"
 description = "Shared library for python services in TBW Capital"
 optional = false
 python-versions = "^3.12"

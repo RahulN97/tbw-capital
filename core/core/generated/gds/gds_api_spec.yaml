@@ -1,0 +1,290 @@
+openapi: 3.0.0
+info:
+  title: Game Data Server API
+  version: 1.0.0
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      tags:
+        - Gds
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+
+  /snapshot:
+    get:
+      summary: Get Game Data Snapshot
+      tags:
+        - Gds
+      responses:
+        '200':
+          description: A snapshot of the game data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameDataSnapshot'
+
+  /session:
+    get:
+      summary: Get Session Data
+      tags:
+        - Gds
+      responses:
+        '200':
+          description: Current session information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+  /exchange:
+    get:
+      summary: Get Exchange Data
+      tags:
+        - Gds
+      responses:
+        '200':
+          description: Current exchange data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Exchange'
+
+  /inventory:
+    get:
+      summary: Get Inventory Data
+      tags:
+        - Gds
+      responses:
+        '200':
+          description: Current inventory data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inventory'
+
+  /player:
+    get:
+      summary: Get Player Data
+      tags:
+        - Gds
+      responses:
+        '200':
+          description: Current player data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Player'
+
+  /config:
+    get:
+      summary: Get Live Config
+      tags:
+        - Gds
+      responses:
+        '200':
+          description: Current live configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveConfig'
+
+  /chat:
+    get:
+      summary: Get Chat Box Data
+      tags:
+        - Gds
+      responses:
+        '200':
+          description: Current chat box contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatBox'
+
+components:
+  schemas:
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+
+    GameDataSnapshot:
+      type: object
+      properties:
+        session:
+          $ref: '#/components/schemas/Session'
+        exchange:
+          $ref: '#/components/schemas/Exchange'
+        inventory:
+          $ref: '#/components/schemas/Inventory'
+        player:
+          $ref: '#/components/schemas/Player'
+        chatBox:
+          $ref: '#/components/schemas/ChatBox'
+        creationTime:
+          type: integer
+          format: int64
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+        startTime:
+          type: integer
+          format: int64
+        playerName:
+          type: string
+        isF2p:
+          type: boolean
+
+    Player:
+      type: object
+      properties:
+        loggedIn:
+          type: boolean
+        location:
+          $ref: '#/components/schemas/Location'
+        camera:
+          $ref: '#/components/schemas/Camera'
+
+    Location:
+      type: object
+      properties:
+        x:
+          type: integer
+        y:
+          type: integer
+
+    Camera:
+      type: object
+      properties:
+        z:
+          type: integer
+        yaw:
+          type: integer
+        scale:
+          type: integer
+
+    Item:
+      type: object
+      properties:
+        id:
+          type: integer
+        quantity:
+          type: integer
+        inventoryPosition:
+          type: integer
+
+    Inventory:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+
+    ExchangeSlotState:
+      type: string
+      enum:
+        - EMPTY
+        - CANCELLED_BUY
+        - BUYING
+        - BOUGHT
+        - CANCELLED_SELL
+        - SELLING
+        - SOLD
+
+    ExchangeSlot:
+      type: object
+      properties:
+        position:
+          type: integer
+        itemId:
+          type: integer
+          default: -1
+        price:
+          type: integer
+          default: -1
+        quantityTransacted:
+          type: integer
+          default: -1
+        totalQuantity:
+          type: integer
+          default: -1
+        state:
+          $ref: '#/components/schemas/ExchangeSlotState'
+          default: EMPTY
+
+    Exchange:
+      type: object
+      properties:
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExchangeSlot'
+
+    Message:
+      type: object
+      properties:
+        content:
+          type: string
+        sender:
+          type: string
+        timestamp:
+          type: integer
+
+    ChatBox:
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+
+    TopLevelConfig:
+      type: object
+      properties:
+        minGp:
+          type: integer
+
+    StratConfig:
+      type: object
+      required:
+      - strat_type
+      properties:
+        strat_type:
+          type: string
+        activated:
+          type: boolean
+        waitDuration:
+          type: integer
+        maxOfferTime:
+          type: integer
+      discriminator:
+        propertyName: strat_type
+
+    MMConfig:
+      allOf:
+        - $ref: '#/components/schemas/StratConfig'
+        - type: object
+
+    LiveConfig:
+      type: object
+      properties:
+        autotraderOn:
+          type: boolean
+        topLevelConfig:
+          $ref: '#/components/schemas/TopLevelConfig'
+        stratConfigs:
+          type: array
+          items:
+            $ref: '#/components/schemas/StratConfig'

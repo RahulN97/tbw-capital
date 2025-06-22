@@ -3,7 +3,6 @@ from typing import Any, Dict, FrozenSet, List
 
 from requests import Response, Session
 
-from core.clients.base_client import BaseClient
 from core.clients.price.exceptions import PriceApiError, UnsupportedPriceWindowError
 from core.clients.price.models.item_metadata import ItemMetadata
 from core.clients.price.models.price import AvgPrice, LatestPrice
@@ -11,7 +10,7 @@ from core.clients.price.models.price_data_snapshot import PriceDataSnapshot
 from core.clients.price.models.price_window import PriceWindow
 
 
-class PriceClient(BaseClient):
+class PriceClient:
 
     OSRS_WIKI_URL: str = "https://prices.runescape.wiki/api/v1/osrs"
     HEADERS: Dict[str, str] = {"User-Agent": "tbw-capital@gmail.com"}
@@ -23,7 +22,6 @@ class PriceClient(BaseClient):
     def __init__(self) -> None:
         self.session: Session = Session()
         self.url: str = self.OSRS_WIKI_URL
-        super().__init__()
 
     @cached_property
     def item_map(self) -> Dict[int, ItemMetadata]:

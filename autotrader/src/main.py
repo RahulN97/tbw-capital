@@ -1,9 +1,15 @@
 import time
 
-from core.clients.gds.gds_client import GdsClient
+from core.clients.client_provider import (
+    provide_gds_client,
+    provide_price_client,
+    provide_redis_client,
+    provide_tdp_client,
+)
 from core.clients.price.price_client import PriceClient
 from core.clients.redis.redis_client import RedisClient
 from core.clients.tdp.tdp_client import TdpClient
+from core.generated.gds.api.gds_api import GdsApi
 from core.logger import logger
 
 from config.autotrader_config import AutotraderConfig
@@ -17,10 +23,10 @@ from trader import Trader
 
 
 def create_trader(config: AutotraderConfig) -> Trader:
-    redis_client: RedisClient = RedisClient(host=config.redis_host, port=config.redis_port)
-    price_client: PriceClient = PriceClient()
-    gds_client: GdsClient = GdsClient(host=config.gds_host, port=config.gds_port)
-    tdp_client: TdpClient = TdpClient(host=config.tdp_host, port=config.tdp_port)
+    redis_client: RedisClient = provide_redis_client(host=config.redis_host, port=config.redis_port)
+    price_client: PriceClient = provide_price_client()
+    gds_client: GdsApi = provide_gds_client(host=config.gds_host, port=config.gds_port)
+    tdp_client: TdpClient = provide_tdp_client(host=config.tdp_host, port=config.tdp_port)
 
     locator: ScreenLocator = ScreenLocator(randomize=config.humanize)
     controller: Controller = Controller(locator=locator, randomize=config.humanize)

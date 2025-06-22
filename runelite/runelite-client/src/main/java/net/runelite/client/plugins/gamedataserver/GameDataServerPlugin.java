@@ -12,23 +12,10 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.gamedataserver.model.GameDataSnapshot;
-import net.runelite.client.plugins.gamedataserver.model.Session;
-import net.runelite.client.plugins.gamedataserver.model.chat.ChatBox;
-import net.runelite.client.plugins.gamedataserver.model.chat.Message;
-import net.runelite.client.plugins.gamedataserver.model.config.LiveConfig;
-import net.runelite.client.plugins.gamedataserver.model.config.MMConfig;
-import net.runelite.client.plugins.gamedataserver.model.config.StratConfig;
-import net.runelite.client.plugins.gamedataserver.model.config.TopLevelConfig;
-import net.runelite.client.plugins.gamedataserver.model.exchange.Exchange;
-import net.runelite.client.plugins.gamedataserver.model.exchange.ExchangeSlot;
-import net.runelite.client.plugins.gamedataserver.model.exchange.ExchangeSlotState;
-import net.runelite.client.plugins.gamedataserver.model.inventory.Inventory;
-import net.runelite.client.plugins.gamedataserver.model.inventory.Item;
-import net.runelite.client.plugins.gamedataserver.model.player.Camera;
-import net.runelite.client.plugins.gamedataserver.model.player.Location;
-import net.runelite.client.plugins.gamedataserver.model.player.Player;
 import net.runelite.client.util.RuntimeTypeAdapterFactory;
+import net.runelite.core.gds.model.Item;
+import net.runelite.core.gds.model.Player;
+import net.runelite.core.gds.model.*;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -117,14 +104,13 @@ public class GameDataServerPlugin extends Plugin {
 
 	private void serveGameDataSnapshot(HttpExchange httpExchange) throws IOException {
 		log.info("Fetching game data snapshot");
-		GameDataSnapshot snapshot = GameDataSnapshot.builder()
+		GameDataSnapshot snapshot = new GameDataSnapshot()
 			.session(getSession())
 			.exchange(getExchangeData())
 			.inventory(getInventoryData())
 			.player(getPlayerData())
 			.chatBox(getChatBox())
-			.creationTime(Instant.now())
-			.build();
+			.creationTime(Instant.now().getEpochSecond());
 		sendResponse(httpExchange, snapshot);
 	}
 
@@ -154,24 +140,19 @@ public class GameDataServerPlugin extends Plugin {
 
 	private void serveLiveConfig(HttpExchange httpExchange) throws IOException {
 		log.info("Fetching live config");
-		TopLevelConfig topLevelConfig = TopLevelConfig.builder()
-			.minGp(config.minGp())
-			.build();
+		TopLevelConfig topLevelConfig = new TopLevelConfig().minGp(config.minGp());
 
-		List<StratConfig> stratConfigs = new ArrayList<>();
-		stratConfigs.add(
-			MMConfig.builder()
+		List<StratConfig> stratConfigs = List.of(
+			new MMConfig()
 				.activated(config.mmActivated())
 				.waitDuration(config.mmWaitDuration())
 				.maxOfferTime(config.maxOfferTime())
-				.build()
 		);
 
-		LiveConfig liveConfig = LiveConfig.builder()
+		LiveConfig liveConfig = new LiveConfig()
 			.autotraderOn(config.autotraderOn())
 			.topLevelConfig(topLevelConfig)
-			.stratConfigs(stratConfigs)
-			.build();
+			.stratConfigs(stratConfigs);
 		sendResponse(httpExchange, liveConfig);
 	}
 
@@ -182,12 +163,32 @@ public class GameDataServerPlugin extends Plugin {
 	}
 
 	private Session getSession() {
-		return Session.builder()
+		return new Session()
 			.id(sessionId)
 			.startTime(startTime)
 			.playerName(client.getLocalPlayer().getName())
-			.isF2p(client.getVarcIntValue(VarClientInt.MEMBERSHIP_STATUS) == 0)
-			.build();
+			.isF2p(client.getVarcIntValue(VarClientInt.MEMBERSHIP_STATUS) == 0);
+	}
+
+	private ExchangeSlotState offerToSlotState(GrandExchangeOfferState state) {
+		switch (state) {
+			case EMPTY:
+				return ExchangeSlotState.EMPTY;
+			case CANCELLED_BUY:
+				return ExchangeSlotState.CANCELLED_BUY;
+			case CANCELLED_SELL:
+				return ExchangeSlotState.CANCELLED_SELL;
+			case BUYING:
+				return ExchangeSlotState.BUYING;
+			case SELLING:
+				return ExchangeSlotState.SELLING;
+			case BOUGHT:
+				return ExchangeSlotState.BOUGHT;
+			case SOLD:
+				return ExchangeSlotState.SOLD;
+			default:
+				throw new GameDataServerException("Unrecognized GE offer state " + state);
+		}
 	}
 
 	private Exchange getExchangeData() {
@@ -199,23 +200,20 @@ public class GameDataServerPlugin extends Plugin {
 		List<ExchangeSlot> slots = IntStream.range(0, Math.min(offers.length, MAX_GE_SLOTS))
 			.mapToObj(i -> {
 				GrandExchangeOffer offer = offers[i];
-				if (offer.getState() == GrandExchangeOfferState.EMPTY) {
-					return ExchangeSlot.asEmpty(i);
+				ExchangeSlotState state = offerToSlotState(offer.getState());
+				ExchangeSlot slot = new ExchangeSlot().position(i).state(state);
+				if (state == ExchangeSlotState.EMPTY) {
+					return slot;
 				}
-				return ExchangeSlot.builder()
-					.position(i)
+				return slot
 					.itemId(offer.getItemId())
 					.price(offer.getPrice())
 					.quantityTransacted(offer.getQuantitySold())
-					.totalQuantity(offer.getTotalQuantity())
-					.state(ExchangeSlotState.fromGrandExchangeOfferState(offer.getState()))
-					.build();
+					.totalQuantity(offer.getTotalQuantity());
 			})
 			.collect(Collectors.toList());
 
-		return Exchange.builder()
-			.slots(slots)
-			.build();
+		return new Exchange().slots(slots);
 	}
 
 	private Inventory getInventoryData() {
@@ -230,40 +228,34 @@ public class GameDataServerPlugin extends Plugin {
 				if (slotItem == null) {
 					return null;
 				}
-				return Item.builder()
+				return new Item()
 					.id(slotItem.getId())
 					.quantity(slotItem.getQuantity())
-					.inventoryPosition(i)
-					.build();
+					.inventoryPosition(i);
 			})
 			.filter(Objects::nonNull)
 			.collect(Collectors.toList());
 
-		return Inventory.builder()
-			.items(items)
-			.build();
+		return new Inventory().items(items);
 	}
 
 	private Player getPlayerData() {
 		boolean loggedIn = client.getGameState() == GameState.LOGGED_IN;
 
-		Camera camera = Camera.builder()
+		Camera camera = new Camera()
 			.z(client.getCameraZ())
 			.yaw(client.getCameraYaw())
-			.scale(client.getScale())
-			.build();
+			.scale(client.getScale());
 
 		WorldPoint worldLocation = client.getLocalPlayer().getWorldLocation();
-		Location location = Location.builder()
+		Location location = new Location()
 			.x(worldLocation.getX())
-			.y(worldLocation.getY())
-			.build();
+			.y(worldLocation.getY());
 
-		return Player.builder()
+		return new Player()
 			.loggedIn(loggedIn)
 			.location(location)
-			.camera(camera)
-			.build();
+			.camera(camera);
 	}
 
 	private String decodeUTF8(String input) {
@@ -273,20 +265,18 @@ public class GameDataServerPlugin extends Plugin {
 	private ChatBox getChatBox() {
 		ChatLineBuffer buffer = client.getChatLineMap().get(ChatMessageType.PUBLICCHAT.getType());
 		if (buffer == null) {
-			return ChatBox.builder().build();
+			return new ChatBox();
 		}
 		MessageNode[] lines = buffer.getLines();
 		List<Message> messages = Arrays.stream(lines)
 			.filter(Objects::nonNull)
-			.map(l -> Message.builder()
+			.map(l -> new Message()
 				.content(decodeUTF8(l.getValue()))
 				.sender(decodeUTF8(l.getName()))
 				.timestamp(l.getTimestamp())
-				.build())
+			)
 			.collect(Collectors.toList());
 
-		return ChatBox.builder()
-			.messages(messages)
-			.build();
+		return new ChatBox().messages(messages);
 	}
 }

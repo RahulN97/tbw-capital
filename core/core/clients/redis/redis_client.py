@@ -1,18 +1,18 @@
+import pickle
 from typing import Dict, List, Optional
 
 from redis import Redis
 
-from core.clients.base_client import BaseClient
-from core.clients.gds.models.exchange.exchange import Exchange
 from core.clients.redis.exceptions import RedisKeyError
 from core.clients.redis.models.buy_limit.buy_limit import BuyLimit
 from core.clients.redis.models.pnl.pnl import Pnl
 from core.clients.redis.models.trade_session.order import Order
 from core.clients.redis.models.trade_session.trade import Trade
 from core.clients.redis.models.trade_session.trade_session import TradeSession
+from core.generated.gds.models.exchange import Exchange
 
 
-class RedisClient(BaseClient):
+class RedisClient:
 
     REDIS_DB_MAP: Dict[str, int] = {
         "session": 0,
@@ -22,11 +22,6 @@ class RedisClient(BaseClient):
     def __init__(self, host: str, port: int) -> None:
         self.session_client: Redis = Redis(host=host, port=port, db=self.REDIS_DB_MAP["session"])
         self.player_client: Redis = Redis(host=host, port=port, db=self.REDIS_DB_MAP["player"])
-        super().__init__()
-
-    def establish_connection(self) -> None:
-        self.session_client.ping()
-        self.player_client.ping()
 
     @staticmethod
     def _get_raw(client: Redis, name: str) -> bytes:
@@ -70,11 +65,11 @@ class RedisClient(BaseClient):
     def get_exchange_snapshot(self, player_name: str) -> Exchange:
         name: str = self._get_name(prefix="exchange", name=player_name)
         raw: bytes = self._get_raw(client=self.player_client, name=name)
-        return Exchange.deserialize(raw)
+        return pickle.loads(raw)
 
     def set_exchange_snapshot(self, player_name: str, exchange: Exchange) -> None:
         name: str = self._get_name(prefix="exchange", name=player_name)
-        self.player_client.set(name=name, value=exchange.serialize())
+        self.player_client.set(name=name, value=pickle.dumps(exchange))
 
     def get_trade_session(self, session_id: str) -> TradeSession:
         name: str = self._get_name(prefix="trade_session", name=session_id)

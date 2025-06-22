@@ -1,0 +1,106 @@
+openapi: 3.0.0
+info:
+  title: "OSRS Price API Models"
+  version: 1.0.0
+
+servers: []
+paths: {}
+
+components:
+  schemas:
+    ItemMetadata:
+      type: object
+      description: "Represents basic metadata about an item."
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        limit:
+          type: integer
+        members:
+          type: boolean
+      required:
+        - id
+        - name
+        - limit
+        - members
+
+    PriceWindow:
+      type: string
+      enum:
+        - NOT_SPECIFIED
+        - AVG_5M
+        - AVG_1H
+
+    Price:
+      type: object
+      properties:
+        low_price:
+          type: integer
+        high_price:
+          type: integer
+      required:
+        - low_price
+        - high_price
+
+    LatestPrice:
+      allOf:
+        - $ref: "#/components/schemas/Price"
+        - type: object
+          description: "Latest price data with timestamps."
+          properties:
+            low_time:
+              type: number
+              format: float
+              description: "Timestamp (e.g., Unix time) when 'low_price' was recorded."
+            high_time:
+              type: number
+              format: float
+              description: "Timestamp (e.g., Unix time) when 'high_price' was recorded."
+          required:
+            - low_time
+            - high_time
+
+    AvgPrice:
+      allOf:
+        - $ref: "#/components/schemas/Price"
+        - type: object
+          description: "Aggregated (averaged) price data over a window."
+          properties:
+            price_window:
+              $ref: "#/components/schemas/PriceWindow"
+            low_volume:
+              type: integer
+              description: "Volume associated with the low price in this window."
+            high_volume:
+              type: integer
+              description: "Volume associated with the high price in this window."
+          required:
+            - price_window
+            - low_volume
+            - high_volume
+
+    PriceDataSnapshot:
+      type: object
+      description: "Snapshot of various price maps for a set of items."
+      properties:
+        latest_map:
+          type: object
+          description: "Map of item ID -> LatestPrice"
+          additionalProperties:
+            $ref: "#/components/schemas/LatestPrice"
+        avg_5m_map:
+          type: object
+          description: "Map of item ID -> 5-minute AvgPrice"
+          additionalProperties:
+            $ref: "#/components/schemas/AvgPrice"
+        avg_1h_map:
+          type: object
+          description: "Map of item ID -> 1-hour AvgPrice"
+          additionalProperties:
+            $ref: "#/components/schemas/AvgPrice"
+      required:
+        - latest_map
+        - avg_5m_map
+        - avg_1h_map

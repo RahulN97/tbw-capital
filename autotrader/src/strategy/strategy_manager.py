@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Set
 
-from core.clients.gds.gds_client import GdsClient
-from core.clients.gds.models.config.live_config import LiveConfig
+from core.generated.gds.api.gds_api import GdsApi
+from core.generated.gds.models.live_config import LiveConfig
 from core.logger import logger
 
 from strategy.strategy import BaseStrategy
@@ -10,9 +10,9 @@ from strategy.strategy_factory import StrategyFactory
 
 class StrategyManager:
 
-    def __init__(self, strat_factory: StrategyFactory, gds_client: GdsClient) -> None:
+    def __init__(self, strat_factory: StrategyFactory, gds_client: GdsApi) -> None:
         self.strat_factory: StrategyFactory = strat_factory
-        self.gds_client: GdsClient = gds_client
+        self.gds_client: GdsApi = gds_client
         self.active_strats: Dict[str, BaseStrategy] = {}
 
     def prepare_strats(self, cur_time: float) -> List[BaseStrategy]:

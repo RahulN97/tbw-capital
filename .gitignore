@@ -12,10 +12,12 @@ core/.openapi-generator
 # gds
 core/core/generated/gds/*
 !core/core/generated/gds/.openapi-generator-ignore
+!core/core/generated/gds/gds_api_spec.yaml
 
 # tdp
 core/core/generated/tdp/*
 !core/core/generated/tdp/.openapi-generator-ignore
+!core/core/generated/tdp/tdp_api_spec.yaml
 
 ## redis ##
 redis/store/*
@@ -89,4 +91,3 @@ project.properties
 .vscode
 .factorypath
 .DS_Store
-
