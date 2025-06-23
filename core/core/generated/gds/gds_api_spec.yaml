@@ -7,6 +7,7 @@ paths:
   /health:
     get:
       summary: Health Check
+      operationId: health
       tags:
         - Gds
       responses:
@@ -33,6 +34,7 @@ paths:
   /session:
     get:
       summary: Get Session Data
+      operationId: session
       tags:
         - Gds
       responses:
@@ -46,6 +48,7 @@ paths:
   /exchange:
     get:
       summary: Get Exchange Data
+      operationId: exchange
       tags:
         - Gds
       responses:
@@ -59,6 +62,7 @@ paths:
   /inventory:
     get:
       summary: Get Inventory Data
+      operationId: inventory
       tags:
         - Gds
       responses:
@@ -72,6 +76,7 @@ paths:
   /player:
     get:
       summary: Get Player Data
+      operationId: player
       tags:
         - Gds
       responses:
@@ -85,6 +90,7 @@ paths:
   /config:
     get:
       summary: Get Live Config
+      operationId: config
       tags:
         - Gds
       responses:
@@ -98,6 +104,7 @@ paths:
   /chat:
     get:
       summary: Get Chat Box Data
+      operationId: chat
       tags:
         - Gds
       responses:

@@ -28,8 +28,7 @@ import java.util.stream.IntStream;
 
 @PluginDescriptor(
 	name = "Game Data Server",
-	description = "Serves client and game data needed for auto trading",
-	loadWhenOutdated = true
+	description = "Serves client and game data needed for auto trading"
 )
 @Slf4j
 public class GameDataServerPlugin extends Plugin {

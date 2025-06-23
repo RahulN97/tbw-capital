@@ -34,41 +34,28 @@ def get_program_args() -> ProgramArgs:
     return ProgramArgs(**vars(args))
 
 
-def add_dependency(pom_path: Path, version: str) -> None:
+def insert_xml(pom_path: Path, block_name: str, xml: str) -> None:
     with open(pom_path, "r", encoding="utf-8") as f:
         lines: List[str] = f.readlines()
 
     for i, line in enumerate(lines):
-        if line.strip() == "<dependencies>":
-            lines.insert(i + 1, DEPENDENCY_BLOCK.format(version=version))
+        if line.strip() == f"<{block_name}>":
+            lines.insert(i + 1, xml)
             break
 
     with open(pom_path, "w", encoding="utf-8") as f:
         f.writelines(lines)
-
-    print("Dependency 'net.runelite:Core' added successfully.")
-
-
-def add_module(pom_path: Path) -> None:
-    with open(pom_path, "r", encoding="utf-8") as f:
-        lines: List[str] = f.readlines()
-
-    for i, line in enumerate(lines):
-        if line.strip() == "<modules>":
-            lines.insert(i + 1, MODULE_BLOCK)
-            break
-
-    with open(pom_path, "w", encoding="utf-8") as f:
-        f.writelines(lines)
-
-    print(f"Module 'core' added successfully.")
 
 
 def main():
     args: ProgramArgs = get_program_args()
 
-    add_dependency(pom_path=args.client, version=args.version)
-    add_module(pom_path=args.parent)
+    insert_xml(
+        pom_path=args.client,
+        block_name="dependencies",
+        xml=DEPENDENCY_BLOCK.format(version=args.version),
+    )
+    insert_xml(pom_path=args.parent, block_name="modules", xml=MODULE_BLOCK)
 
 
 if __name__ == "__main__":

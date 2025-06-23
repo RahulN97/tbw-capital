@@ -6,7 +6,7 @@
     <parent>
         <groupId>net.runelite</groupId>
         <artifactId>runelite-parent</artifactId>
-        <version>1.10.37</version>
+        <version>1.11.10.2</version>
     </parent>
 
     <artifactId>Core</artifactId>
@@ -43,18 +43,22 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>5.11.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>5.11.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <version>3.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>RELEASE</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -76,7 +80,7 @@
                             </inputSpec>
                             <generatorName>java</generatorName>
                             <packageName>net.runelite.core.gds</packageName>
-                            <output>${project.basedir}</output>
+                            <output>${project.build.directory}/generated-sources</output>
                             <configOptions>
                                 <apiPackage>net.runelite.core.gds.api</apiPackage>
                                 <modelPackage>net.runelite.core.gds.model</modelPackage>
@@ -92,14 +96,14 @@
                 <version>3.2.0</version>
                 <executions>
                     <execution>
-                        <id>add-source</id>
+                        <id>add-main-source</id>
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>add-source</goal>
                         </goals>
                         <configuration>
                             <sources>
-                                <source>src/main/java</source>
+                                <source>${project.build.directory}/generated-sources/src/main/java</source>
                             </sources>
                         </configuration>
                     </execution>
